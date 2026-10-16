@@ -2565,6 +2565,23 @@ CONFIG
   esac
 }
 
+# Portable in-place line rewrite for test fixtures. BSD sed -i demands a
+# backup suffix and ignores \n in replacements; awk -v expands \n on both
+# GNU and BSD, so fixture edits behave the same on a Mac and in CI.
+rewrite_matching_lines() {
+  local target="$1" line_regex="$2" replacement="$3" rewritten
+  rewritten="$(mktemp "$target.XXXXXX")"
+  awk -v line_regex="$line_regex" -v replacement="$replacement" '
+    $0 ~ line_regex { if (replacement != "") print replacement; next }
+    { print }
+  ' "$target" > "$rewritten"
+  mv -f -- "$rewritten" "$target"
+}
+
+delete_matching_lines() {
+  rewrite_matching_lines "$1" "$2" ""
+}
+
 write_main_only_ubuntu_sources() {
   cat > "$1" <<'SOURCES'
 # Ubuntu sources have moved to /etc/apt/sources.list.d/ubuntu.sources
@@ -2670,19 +2687,19 @@ test_orbstack_enables_universe_in_existing_deb822_sources() {
       ;;
     universe-present)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i 's/^Components: .*/Components: main restricted universe multiverse/' "$ubuntu_sources"
+      rewrite_matching_lines "$ubuntu_sources" '^Components: ' 'Components: main restricted universe multiverse'
       ;;
     missing-components)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i '/^Components: main restricted$/d' "$ubuntu_sources"
+      delete_matching_lines "$ubuntu_sources" '^Components: main restricted$'
       ;;
     multiline-components)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i 's/^Components: main restricted$/Components: main\n restricted/' "$ubuntu_sources"
+      rewrite_matching_lines "$ubuntu_sources" '^Components: main restricted$' 'Components: main\n restricted'
       ;;
     multiline-components-with-universe)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i 's/^Components: main.*$/Components: main\n# comment between continuations\n universe/' "$ubuntu_sources"
+      rewrite_matching_lines "$ubuntu_sources" '^Components: main' 'Components: main\n# comment between continuations\n universe'
       ;;
     not-regular) mkdir "$ubuntu_sources" ;;
     continued-fields)
@@ -2792,7 +2809,7 @@ SOURCES
       ;;
     colonless-second-uri)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i 's|^URIs: http://ports.ubuntu.com/ubuntu-ports/$|URIs: http://ports.ubuntu.com/ubuntu-ports/ /srv/local-repo|' "$ubuntu_sources"
+      rewrite_matching_lines "$ubuntu_sources" '^URIs: http://ports.ubuntu.com/ubuntu-ports/$' 'URIs: http://ports.ubuntu.com/ubuntu-ports/ /srv/local-repo'
       ;;
     unknown-disabled-type)
       write_main_only_ubuntu_sources "$ubuntu_sources"
@@ -2800,7 +2817,7 @@ SOURCES
       ;;
     empty-uris)
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      sed -i 's|^URIs: http://ports.ubuntu.com/ubuntu-ports/$|URIs:|' "$ubuntu_sources"
+      rewrite_matching_lines "$ubuntu_sources" '^URIs: http://ports.ubuntu.com/ubuntu-ports/$' 'URIs:'
       ;;
   esac
   [ -d "$ubuntu_sources" ] || cp "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.before"

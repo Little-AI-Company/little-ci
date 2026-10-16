@@ -130,7 +130,7 @@ main() {
   github_fleet_init
   if [ -z "${ORB_MACHINE:-}" ]; then
     case "$RUNNER_NAME_PREFIX" in
-      *[A-Z]*)
+      *[[:upper:]]*)
         fail "set ORB_MACHINE explicitly when an overridden RUNNER_NAME_PREFIX contains uppercase letters"
         ;;
     esac
@@ -326,10 +326,12 @@ fi
 
 updated_sources="$(mktemp "$apt_sources_dir/.ubuntu.sources.little-ci.XXXXXX")"
 trap 'rm -f -- "$updated_sources"' EXIT
+# Copy mode (and owner, when root) onto the temp file first; awk then rewrites
+# its contents in place. cp -p works on GNU and BSD, unlike chown --reference,
+# so the test suite can run this script on a Mac.
+cp -p -- "$ubuntu_sources" "$updated_sources"
 sources_state="$(add_universe_component "$ubuntu_sources" "$updated_sources")"
 if [ "$sources_state" = changed ]; then
-  chown --reference="$ubuntu_sources" "$updated_sources"
-  chmod --reference="$ubuntu_sources" "$updated_sources"
   mv -- "$updated_sources" "$ubuntu_sources"
   echo "enabled universe in $ubuntu_sources"
 fi
