@@ -2313,7 +2313,7 @@ test_orbstack_transfers_use_explicit_allowlist() {
 # chromium group plus the tools group it always adds), kept independent of the
 # script so a drifted copy fails here.
 expected_job_dependency_packages=(
-  ffmpeg ripgrep
+  ffmpeg ripgrep build-essential pkg-config
   libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2
   libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 libnspr4 libnss3
   libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6
@@ -2365,7 +2365,7 @@ for argument in "$@"; do
   esac
 done
 MOCK
-  for command_name in ffmpeg rg; do
+  for command_name in ffmpeg rg make cc; do
     cat > "$sandbox_dir/bin/$command_name" <<'MOCK'
 #!/usr/bin/env bash
 printf '%s %s\n' "$(basename "$0")" "$*" >> "${MOCK_COMMAND_LOG:?}"
@@ -2426,6 +2426,8 @@ test_job_dependencies_install_exact_ubuntu_packages() {
   done
   assert_file_contains "$sandbox_dir/command.log" 'ffmpeg -version'
   assert_file_contains "$sandbox_dir/command.log" 'rg --version'
+  assert_file_contains "$sandbox_dir/command.log" 'make --version'
+  assert_file_contains "$sandbox_dir/command.log" 'cc --version'
   assert_file_not_contains "$sandbox_dir/command.log" 'FORBIDDEN'
   assert_file_contains "$sandbox_dir/needrestart-conf.d/actions_runner_services.conf" \
     '$nrconf{override_rc}{qr(^actions\.runner\..+\.service$)} = 0;'

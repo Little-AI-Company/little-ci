@@ -262,9 +262,11 @@ It skips swapfile creation in OrbStack.
 
 `provision-job-dependencies.sh` runs as root inside Ubuntu 24.04 arm64 or amd64
 and installs the system packages trusted jobs commonly expect: `ffmpeg`,
-`ripgrep` (`rg`), and exactly the Ubuntu packages that Playwright v1.59.1's
-`playwright install-deps chromium` installs (its `chromium` and `tools` groups:
-Chromium shared libraries, `xvfb`, and fonts). It uses
+`ripgrep` (`rg`), `build-essential` and `pkg-config` (so `npm ci` can fall back
+to a node-gyp source build when a native module has no prebuilt binary for the
+job's Node ABI and architecture), and exactly the Ubuntu packages that Playwright
+v1.59.1's `playwright install-deps chromium` installs (its `chromium` and `tools`
+groups: Chromium shared libraries, `xvfb`, and fonts). It uses
 `apt-get install --no-install-recommends`, skips apt entirely when every package
 is already installed, and fails if any package is still missing afterwards. It
 does not download Chromium, Node.js, Bun, or Playwright; jobs still install their
