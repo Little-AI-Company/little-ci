@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # provision-job-dependencies.sh — install Ubuntu packages trusted CI jobs expect.
 #
-# Installs ffmpeg, ripgrep, and the exact Ubuntu packages that Playwright's
-# `playwright install-deps chromium` installs, so jobs can launch a Chromium they
-# download themselves. It does not download browsers, Node.js, Bun, or
-# Playwright, and it changes no runner, service, or fleet state.
+# Installs ffmpeg, ripgrep, a C/C++ toolchain for native-module builds, and the
+# exact Ubuntu packages that Playwright's `playwright install-deps chromium`
+# installs, so jobs can launch a Chromium they download themselves. It does not
+# download browsers, Node.js, Bun, or Playwright, and it changes no runner,
+# service, or fleet state.
 #
 # Safe to re-run: when every package is already installed it verifies the tools
 # without contacting apt. Run as root on an Ubuntu 24.04 arm64 or amd64 host:
@@ -33,6 +34,12 @@ fail() {
 # ffmpeg and ripgrep are in Ubuntu's universe component.
 job_tool_packages=(ffmpeg ripgrep)
 
+# npm falls back to node-gyp whenever a native module has no prebuilt binary for
+# the job's exact Node ABI and architecture (better-sqlite3 12.x on Node 20
+# arm64, for one), and node-gyp needs make, a C/C++ compiler, and pkg-config.
+# GitHub-hosted images carry these; a bare Ubuntu guest does not.
+native_build_packages=(build-essential pkg-config)
+
 # Playwright v1.59.1 `install-deps chromium` for ubuntu24.04-x64 and
 # ubuntu24.04-arm64 (identical lists): the chromium group plus the tools group
 # that install-deps always adds. Refresh both lists together from
@@ -49,7 +56,7 @@ playwright_tools_packages=(
   xfonts-cyrillic xfonts-scalable fonts-liberation fonts-ipafont-gothic
   fonts-wqy-zenhei fonts-tlwg-loma-otf fonts-freefont-ttf
 )
-readonly job_tool_packages playwright_chromium_packages playwright_tools_packages
+readonly job_tool_packages native_build_packages playwright_chromium_packages playwright_tools_packages
 
 require_supported_host() {
   local os_release_file distribution_id distribution_version package_architecture
@@ -96,9 +103,10 @@ NEEDRESTART
 
 main() {
   local required_packages missing_packages remaining_packages ffmpeg_version
-  local ripgrep_version
+  local ripgrep_version make_version compiler_version
   required_packages=(
     "${job_tool_packages[@]}"
+    "${native_build_packages[@]}"
     "${playwright_chromium_packages[@]}"
     "${playwright_tools_packages[@]}"
   )
@@ -122,7 +130,10 @@ main() {
   # Capture instead of piping to head so pipefail cannot trip on SIGPIPE.
   ffmpeg_version="$(ffmpeg -version)" || fail "ffmpeg is installed but does not run"
   ripgrep_version="$(rg --version)" || fail "rg is installed but does not run"
-  printf '%s\n%s\n' "${ffmpeg_version%%$'\n'*}" "${ripgrep_version%%$'\n'*}"
+  make_version="$(make --version)" || fail "make is installed but does not run"
+  compiler_version="$(cc --version)" || fail "cc is installed but does not run"
+  printf '%s\n%s\n%s\n%s\n' "${ffmpeg_version%%$'\n'*}" "${ripgrep_version%%$'\n'*}" \
+    "${make_version%%$'\n'*}" "${compiler_version%%$'\n'*}"
   echo "== CI job dependencies ready =="
 }
 
