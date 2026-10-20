@@ -1,0 +1,1 @@
+ls: /var/run/docker.sock: No such file or directory

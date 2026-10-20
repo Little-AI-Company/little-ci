@@ -1,0 +1,125 @@
+{
+ "probeVersion": 1,
+ "sections": {
+  "df": {
+   "exit": 0,
+   "output": "RmlsZXN5c3RlbSAgICAgICAgIDEwMjQtYmxvY2tzICAgICAgIFVzZWQgQXZhaWxhYmxlIENhcGFjaXR5ICBNb3VudGVkIG9uCi9kZXYvZGlzazNzMXMxICAgICAgIDQ4Mjc5NzY1MiAgIDI1NjQyMzkyICAzMDY0Mzc0OCAgICA0NiUgICAgLwpkZXZmcyAgICAgICAgICAgICAgICAgICAgICAyMTggICAgICAgIDIxOCAgICAgICAgIDAgICAxMDAlICAgIC9kZXYKL2Rldi9kaXNrM3M2ICAgICAgICAgNDgyNzk3NjUyICAgIDk0Mzg2MTYgIDMwNjQzNzQ4ICAgIDI0JSAgICAvU3lzdGVtL1ZvbHVtZXMvVk0KL2Rldi9kaXNrM3MyICAgICAgICAgNDgyNzk3NjUyICAgMTgwNzUxODAgIDMwNjQzNzQ4ICAgIDM4JSAgICAvU3lzdGVtL1ZvbHVtZXMvUHJlYm9vdAovZGV2L2Rpc2szczQgICAgICAgICA0ODI3OTc2NTIgICAgIDYzNDQ4NCAgMzA2NDM3NDggICAgIDMlICAgIC9TeXN0ZW0vVm9sdW1lcy9VcGRhdGUKL2Rldi9kaXNrMXMyICAgICAgICAgICAgNTEyMDAwICAgICAgIDYxNjQgICAgNDkxOTk2ICAgICAyJSAgICAvU3lzdGVtL1ZvbHVtZXMveGFydHMKL2Rldi9kaXNrMXMxICAgICAgICAgICAgNTEyMDAwICAgICAgIDU5ODAgICAgNDkxOTk2ICAgICAyJSAgICAvU3lzdGVtL1ZvbHVtZXMvaVNDUHJlYm9vdAovZGV2L2Rpc2sxczMgICAgICAgICAgICA1MTIwMDAgICAgICAgMzAwMCAgICA0OTE5OTYgICAgIDElICAgIC9TeXN0ZW0vVm9sdW1lcy9IYXJkd2FyZQovZGV2L2Rpc2szczUgICAgICAgICA0ODI3OTc2NTIgIDM5NTQyNzMyOCAgMzA2NDM3NDggICAgOTMlICAgIC9TeXN0ZW0vVm9sdW1lcy9EYXRhCm1hcCBhdXRvX2hvbWUgICAgICAgICAgICAgICAgMCAgICAgICAgICAwICAgICAgICAgMCAgIDEwMCUgICAgL1N5c3RlbS9Wb2x1bWVzL0RhdGEvaG9tZQovZGV2L2Rpc2syczEgICAgICAgICAgIDUyNDI4MzYgICAgMjUwMjMwNCAgIDI3MjAxNzYgICAgNDglICAgIC9TeXN0ZW0vVm9sdW1lcy9VcGRhdGUvU0ZSL21udDEKL2Rldi9kaXNrM3MxICAgICAgICAgNDgyNzk3NjUyICAgMjU2NDIzOTIgIDMwNjQzNzQ4ICAgIDQ2JSAgICAvU3lzdGVtL1ZvbHVtZXMvVXBkYXRlL21udDEKL2Rldi9kaXNrNXMxICAgICAgICAgIDE4MTI0ODAwICAgMTc1ODY2NzIgICAgNDkxNzk2ICAgIDk4JSAgICAvcHJpdmF0ZS92YXIvcnVuL2NvbS5hcHBsZS5zZWN1cml0eS5jcnlwdGV4ZC9tbnQvY29tLmFwcGxlLmlQaG9uZU9TLlNpbXVsYXRvclJ1bnRpbWUtdjI0LjEuNDM0LjAuakQxeWVICi9kZXYvZGlzazdzMSAgICAgICAgICAxNzY1OTkwNCAgIDE3MTU5NTE2ICAgIDQ1NTE0NCAgICA5OCUgICAgL0xpYnJhcnkvRGV2ZWxvcGVyL0NvcmVTaW11bGF0b3IvVm9sdW1lcy9pT1NfMjNGNzcKL2Rldi9kaXNrMTBzMSAgICAgICAxOTUzNDUwNjI0IDEwNzE1MDc1ODQgODgxOTQzMDQwICAgIDU1JSAgICAvVm9sdW1lcy9Zb2RhIDIKL2Rldi9kaXNrOXMxICAgICAgICAgMzE0MzY3OTYwICAyNjMyNzY0NDQgIDUwOTUwNTMyICAgIDg0JSAgICAvVm9sdW1lcy9MVyBCdWlsZApPcmJTdGFjazovT3JiU3RhY2sgICAgNDQxNzEyNjQgICAxNjc2MTQwOCAgMjc0MDk4NTYgICAgMzglICAgIC9Vc2Vycy9idWlsZGVyMi9PcmJTdGFjaw=="
+  },
+  "docker_compose": {
+   "exit": 0,
+   "output": "NS41LjA="
+  },
+  "docker_info": {
+   "exit": 0,
+   "output": "MjkuOC4y"
+  },
+  "docker_socket": {
+   "exit": 0,
+   "output": "c3J3eHIteHIteEAgMSBidWlsZGVyMiAgc3RhZmYgIDAgT2N0IDE5IDIwOjMwIC92YXIvcnVuL2RvY2tlci5zb2NrCi9Vc2Vycy9idWlsZGVyMi8ub3Jic3RhY2svcnVuL2RvY2tlci5zb2Nr"
+  },
+  "identity": {
+   "exit": 0,
+   "output": "c3R1ZGlvLW00CjUwMQoyNi43LjE="
+  },
+  "memory_pressure": {
+   "exit": 0,
+   "output": "U3lzdGVtLXdpZGUgbWVtb3J5IGZyZWUgcGVyY2VudGFnZTogNDYl"
+  },
+  "mount": {
+   "exit": 0,
+   "output": "L2Rldi9kaXNrM3MxczEgb24gLyAoYXBmcywgc2VhbGVkLCBsb2NhbCwgcmVhZC1vbmx5LCBqb3VybmFsZWQpCmRldmZzIG9uIC9kZXYgKGRldmZzLCBsb2NhbCwgbm9icm93c2UpCi9kZXYvZGlzazNzNiBvbiAvU3lzdGVtL1ZvbHVtZXMvVk0gKGFwZnMsIGxvY2FsLCBub2V4ZWMsIGpvdXJuYWxlZCwgbm9hdGltZSwgbm9icm93c2UpCi9kZXYvZGlzazNzMiBvbiAvU3lzdGVtL1ZvbHVtZXMvUHJlYm9vdCAoYXBmcywgbG9jYWwsIGpvdXJuYWxlZCwgbm9icm93c2UpCi9kZXYvZGlzazNzNCBvbiAvU3lzdGVtL1ZvbHVtZXMvVXBkYXRlIChhcGZzLCBsb2NhbCwgam91cm5hbGVkLCBub2Jyb3dzZSkKL2Rldi9kaXNrMXMyIG9uIC9TeXN0ZW0vVm9sdW1lcy94YXJ0cyAoYXBmcywgbG9jYWwsIG5vZXhlYywgam91cm5hbGVkLCBub2F0aW1lLCBub2Jyb3dzZSkKL2Rldi9kaXNrMXMxIG9uIC9TeXN0ZW0vVm9sdW1lcy9pU0NQcmVib290IChhcGZzLCBsb2NhbCwgam91cm5hbGVkLCBub2Jyb3dzZSkKL2Rldi9kaXNrMXMzIG9uIC9TeXN0ZW0vVm9sdW1lcy9IYXJkd2FyZSAoYXBmcywgbG9jYWwsIGpvdXJuYWxlZCwgbm9icm93c2UpCi9kZXYvZGlzazNzNSBvbiAvU3lzdGVtL1ZvbHVtZXMvRGF0YSAoYXBmcywgbG9jYWwsIGpvdXJuYWxlZCwgbm9icm93c2UsIHByb3RlY3QsIHJvb3QgZGF0YSkKbWFwIGF1dG9faG9tZSBvbiAvU3lzdGVtL1ZvbHVtZXMvRGF0YS9ob21lIChhdXRvZnMsIGF1dG9tb3VudGVkLCBub2Jyb3dzZSkKL2Rldi9kaXNrMnMxIG9uIC9TeXN0ZW0vVm9sdW1lcy9VcGRhdGUvU0ZSL21udDEgKGFwZnMsIGxvY2FsLCBqb3VybmFsZWQsIG5vYnJvd3NlKQovZGV2L2Rpc2szczEgb24gL1N5c3RlbS9Wb2x1bWVzL1VwZGF0ZS9tbnQxIChhcGZzLCBzZWFsZWQsIGxvY2FsLCBqb3VybmFsZWQsIG5vYnJvd3NlKQovZGV2L2Rpc2s1czEgb24gL3ByaXZhdGUvdmFyL3J1bi9jb20uYXBwbGUuc2VjdXJpdHkuY3J5cHRleGQvbW50L2NvbS5hcHBsZS5pUGhvbmVPUy5TaW11bGF0b3JSdW50aW1lLXYyNC4xLjQzNC4wLmpEMXllSCAoYXBmcywgc2VhbGVkLCBsb2NhbCwgcmVhZC1vbmx5LCBqb3VybmFsZWQsIG5vYnJvd3NlKQovZGV2L2Rpc2s3czEgb24gL0xpYnJhcnkvRGV2ZWxvcGVyL0NvcmVTaW11bGF0b3IvVm9sdW1lcy9pT1NfMjNGNzcgKGFwZnMsIHNlYWxlZCwgbG9jYWwsIG5vZGV2LCBub3N1aWQsIHJlYWQtb25seSwgam91cm5hbGVkLCBub2F0aW1lLCBub2Jyb3dzZSkKL2Rldi9kaXNrMTBzMSBvbiAvVm9sdW1lcy9Zb2RhIDIgKGV4ZmF0LCBsb2NhbCwgbm9kZXYsIG5vc3VpZCwgbm9vd25lcnMsIG5vYXRpbWUsIGZza2l0KQovZGV2L2Rpc2s5czEgb24gL1ZvbHVtZXMvTFcgQnVpbGQgKGFwZnMsIGxvY2FsLCBub2Rldiwgbm9zdWlkLCBqb3VybmFsZWQsIG5vb3duZXJzLCBtb3VudGVkIGJ5IGJ1aWxkZXIyKQpPcmJTdGFjazovT3JiU3RhY2sgb24gL1VzZXJzL2J1aWxkZXIyL09yYlN0YWNrIChuZnMsIG5vZGV2LCBub3N1aWQsIG5vYXRpbWUsIG1vdW50ZWQgYnkgYnVpbGRlcjIp"
+  },
+  "orbstack_status": {
+   "exit": 0,
+   "output": "UnVubmluZw=="
+  },
+  "orbstack_version": {
+   "exit": 0,
+   "output": "VmVyc2lvbjogMi4yLjQgKDIwMjA0MDApCkNvbW1pdDogMWM0YzgyNjdmMzI1NmY4ZGY5ZTRkODBhMmU1MGFjOGYxMTM2OTU2YyAodjIuMi40KQ=="
+  },
+  "orbstack_vmgr": {
+   "exit": 0,
+   "output": "8J+MsiB2bWdyIHwgdGltZT0iMTAtMTkgMjA6MzA6MjIiIGxldmVsPWluZm8gbXNnPSJzdGFydHVwIHBoYXNlIGJlZ2luIiBwaGFzZT12ZXJpZnlfcm9zZXR0YQrwn4yyIHZtZ3IgfCB0aW1lPSIxMC0xOSAyMDozMDoyMiIgbGV2ZWw9aW5mbyBtc2c9InN0YXJ0dXAgcGhhc2UgY29tcGxldGUiIHBoYXNlPXZlcmlmeV9yb3NldHRh"
+  },
+  "power": {
+   "exit": 0,
+   "output": "Tm93IGRyYXdpbmcgZnJvbSAnQUMgUG93ZXIn"
+  },
+  "runner.ci-m4-candidate-1.bun": {
+   "exit": 0,
+   "output": "MS4zLjE0"
+  },
+  "runner.ci-m4-candidate-1.definition": {
+   "exit": 1,
+   "output": ""
+  },
+  "runner.ci-m4-candidate-1.directory": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-candidate-1.node": {
+   "exit": 0,
+   "output": "djI0LjE0LjE="
+  },
+  "runner.ci-m4-candidate-1.registration": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-candidate-1.service": {
+   "exit": 1,
+   "output": "QmFkIHJlcXVlc3QuCkNvdWxkIG5vdCBmaW5kIHNlcnZpY2UgImNvbS5leGFtcGxlLmNpLXJ1bm5lci5jaS1tNC1jYW5kaWRhdGUtMSIgaW4gZG9tYWluIGZvciB1c2VyIGd1aTogNTAx"
+  },
+  "runner.ci-m4-check-1.bun": {
+   "exit": 0,
+   "output": "MS4zLjE0"
+  },
+  "runner.ci-m4-check-1.definition": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-check-1.directory": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-check-1.node": {
+   "exit": 0,
+   "output": "djI0LjE0LjE="
+  },
+  "runner.ci-m4-check-1.registration": {
+   "exit": 0,
+   "output": "L1VzZXJzL2J1aWxkZXIyL2FjdGlvbnMtcnVubmVycy5ub2luZGV4L2NpLW00LWNoZWNrLTEvLnJ1bm5lcjoiYWdlbnROYW1lIjogImNpLW00LWNoZWNrLTEiCi9Vc2Vycy9idWlsZGVyMi9hY3Rpb25zLXJ1bm5lcnMubm9pbmRleC9jaS1tNC1jaGVjay0xLy5ydW5uZXI6ImdpdEh1YlVybCI6ICJodHRwczovL2dpdGh1Yi5jb20vZXhhbXBsZS1vd25lci9leGFtcGxlLXJlcG8i"
+  },
+  "runner.ci-m4-check-1.service": {
+   "exit": 0,
+   "output": "CXN0YXRlID0gcnVubmluZwoJcGlkID0gNjgyODYKCWxhc3QgZXhpdCBjb2RlID0gKG5ldmVyIGV4aXRlZCk="
+  },
+  "runner.ci-m4-check-2.bun": {
+   "exit": 0,
+   "output": "MS4zLjE0"
+  },
+  "runner.ci-m4-check-2.definition": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-check-2.directory": {
+   "exit": 0,
+   "output": ""
+  },
+  "runner.ci-m4-check-2.node": {
+   "exit": 0,
+   "output": "djI0LjE0LjE="
+  },
+  "runner.ci-m4-check-2.registration": {
+   "exit": 0,
+   "output": "L1VzZXJzL2J1aWxkZXIyL2FjdGlvbnMtcnVubmVycy5ub2luZGV4L2NpLW00LWNoZWNrLTIvLnJ1bm5lcjoiYWdlbnROYW1lIjogImNpLW00LWNoZWNrLTIiCi9Vc2Vycy9idWlsZGVyMi9hY3Rpb25zLXJ1bm5lcnMubm9pbmRleC9jaS1tNC1jaGVjay0yLy5ydW5uZXI6ImdpdEh1YlVybCI6ICJodHRwczovL2dpdGh1Yi5jb20vZXhhbXBsZS1vd25lci9leGFtcGxlLXJlcG8i"
+  },
+  "runner.ci-m4-check-2.service": {
+   "exit": 0,
+   "output": "CXN0YXRlID0gcnVubmluZwoJcGlkID0gODEwNjEKCWxhc3QgZXhpdCBjb2RlID0gKG5ldmVyIGV4aXRlZCk="
+  },
+  "sysctl": {
+   "exit": 0,
+   "output": "MTIKMjU3Njk4MDM3NzYKeyAzMC43NCAyMy4xNSAyMi4zOSB9CnZtLnN3YXB1c2FnZTogdG90YWwgPSA5MjE2LjAwTSAgdXNlZCA9IDc2NzEuMzFNICBmcmVlID0gMTU0NC42OU0gIChlbmNyeXB0ZWQp"
+  }
+ }
+}

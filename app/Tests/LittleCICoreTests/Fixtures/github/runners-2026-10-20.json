@@ -1,0 +1,250 @@
+{
+ "total_count": 7,
+ "runners": [
+  {
+   "id": 52,
+   "name": "ci-m1-candidate-1",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-candidate",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m1",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 53,
+   "name": "ci-m1-check-1",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m1",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 34,
+   "name": "ci-m4-check-1",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m4",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 51,
+   "name": "ci-m1-check-2",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m1",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 54,
+   "name": "ci-m1-check-3",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m1",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 55,
+   "name": "ci-m1-check-4",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m1",
+     "type": "custom"
+    }
+   ]
+  },
+  {
+   "id": 37,
+   "name": "ci-m4-check-2",
+   "os": "macOS",
+   "status": "offline",
+   "busy": false,
+   "version": "2.338.0",
+   "labels": [
+    {
+     "id": 0,
+     "name": "self-hosted",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "macOS",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "ARM64",
+     "type": "read-only"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-check",
+     "type": "custom"
+    },
+    {
+     "id": 0,
+     "name": "example-repo-m4",
+     "type": "custom"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,975 @@
+{
+ "note": "CI runs created before 2026-10-20 0100Z and updated after it, rebuilt from the backfill; status is what it was then (in_progress once a job had started). PR states are as of that time.",
+ "moment": "2026-10-20T01:00:00Z",
+ "activeRuns": [
+  {
+   "id": 39350042518,
+   "name": "CI",
+   "event": "push",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "main",
+   "head_sha": "e9539607c7ae07ffab1213f7c2ca699b7dae0f1c",
+   "created_at": "2026-10-20T00:50:45Z",
+   "run_started_at": "2026-10-20T00:50:45Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39350042518",
+   "display_title": "Change on main",
+   "pull_requests": []
+  },
+  {
+   "id": 39349927981,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-7",
+   "head_sha": "4f1ddca9a3db3fb0126b18ee04489a4399e8cbae",
+   "created_at": "2026-10-20T00:49:36Z",
+   "run_started_at": "2026-10-20T00:49:36Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39349927981",
+   "display_title": "Change on feature/branch-7",
+   "pull_requests": []
+  },
+  {
+   "id": 39345755016,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-8",
+   "head_sha": "bc1dec9c55370ef591772fde99e777361bc1fa53",
+   "created_at": "2026-10-20T00:07:32Z",
+   "run_started_at": "2026-10-20T00:07:32Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39345755016",
+   "display_title": "Change on feature/branch-8",
+   "pull_requests": []
+  },
+  {
+   "id": 39345150649,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-9",
+   "head_sha": "6099d3b2a02acfb8604f5e2eeeaaf09d1505afe0",
+   "created_at": "2026-10-20T00:01:38Z",
+   "run_started_at": "2026-10-20T00:01:38Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39345150649",
+   "display_title": "Change on feature/branch-9",
+   "pull_requests": []
+  },
+  {
+   "id": 39344986617,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-10",
+   "head_sha": "f2be3d7d3daec5cc34221debd89d30b4b04d70b5",
+   "created_at": "2026-10-20T00:00:09Z",
+   "run_started_at": "2026-10-20T00:00:09Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39344986617",
+   "display_title": "Change on feature/branch-10",
+   "pull_requests": []
+  },
+  {
+   "id": 39344724785,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-11",
+   "head_sha": "55087c461308455163a5a72b25c8565be3d4173d",
+   "created_at": "2026-10-19T23:57:28Z",
+   "run_started_at": "2026-10-19T23:57:28Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39344724785",
+   "display_title": "Change on feature/branch-11",
+   "pull_requests": []
+  },
+  {
+   "id": 39343673274,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-12",
+   "head_sha": "b8fd609078fb9fe21c70754b0faa59bdb7ee6c2a",
+   "created_at": "2026-10-19T23:46:53Z",
+   "run_started_at": "2026-10-19T23:46:53Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39343673274",
+   "display_title": "Change on feature/branch-12",
+   "pull_requests": []
+  },
+  {
+   "id": 39342895411,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-13",
+   "head_sha": "1dcd910cfa3ae62f67f226f8b332a4c6b4e9d9df",
+   "created_at": "2026-10-19T23:39:16Z",
+   "run_started_at": "2026-10-19T23:39:16Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39342895411",
+   "display_title": "Change on feature/branch-13",
+   "pull_requests": []
+  },
+  {
+   "id": 39342093562,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-14",
+   "head_sha": "d58823b45a7fab6f853b04bfc86b393c4caeff04",
+   "created_at": "2026-10-19T23:31:25Z",
+   "run_started_at": "2026-10-19T23:31:25Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39342093562",
+   "display_title": "Change on feature/branch-14",
+   "pull_requests": []
+  },
+  {
+   "id": 39341830737,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-15",
+   "head_sha": "485fc4a2d53260e4ab0fcfa9b1b9052f5387da06",
+   "created_at": "2026-10-19T23:28:56Z",
+   "run_started_at": "2026-10-19T23:28:56Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39341830737",
+   "display_title": "Change on feature/branch-15",
+   "pull_requests": []
+  },
+  {
+   "id": 39341657228,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-16",
+   "head_sha": "0522703d45d53cfc42f5b916136d4eed7a4a9cd4",
+   "created_at": "2026-10-19T23:27:15Z",
+   "run_started_at": "2026-10-19T23:27:15Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39341657228",
+   "display_title": "Change on feature/branch-16",
+   "pull_requests": []
+  },
+  {
+   "id": 39340948472,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-17",
+   "head_sha": "c4ac37ca6a0474e25267cd3a2450caf89d57a0ef",
+   "created_at": "2026-10-19T23:20:25Z",
+   "run_started_at": "2026-10-19T23:20:25Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39340948472",
+   "display_title": "Change on feature/branch-17",
+   "pull_requests": []
+  },
+  {
+   "id": 39340414066,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-18",
+   "head_sha": "0d3c6acbc3b22671264fbbf99f1f72645389c65f",
+   "created_at": "2026-10-19T23:15:22Z",
+   "run_started_at": "2026-10-19T23:15:22Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39340414066",
+   "display_title": "Change on feature/branch-18",
+   "pull_requests": []
+  },
+  {
+   "id": 39340059393,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-8",
+   "head_sha": "179e3f70239a473363e685e80b37cd6f8c48573c",
+   "created_at": "2026-10-19T23:12:05Z",
+   "run_started_at": "2026-10-19T23:12:05Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39340059393",
+   "display_title": "Change on feature/branch-8",
+   "pull_requests": []
+  },
+  {
+   "id": 39339788087,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-19",
+   "head_sha": "5ad84d433eba47d96acab6aa9da994f3e8c55c91",
+   "created_at": "2026-10-19T23:09:33Z",
+   "run_started_at": "2026-10-19T23:09:33Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39339788087",
+   "display_title": "Change on feature/branch-19",
+   "pull_requests": []
+  },
+  {
+   "id": 39339444909,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-20",
+   "head_sha": "45b31bfe54329abab9948b38754e0c81848c2e50",
+   "created_at": "2026-10-19T23:06:15Z",
+   "run_started_at": "2026-10-19T23:06:15Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39339444909",
+   "display_title": "Change on feature/branch-20",
+   "pull_requests": []
+  },
+  {
+   "id": 39339225805,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-21",
+   "head_sha": "b3fc552977f68e6060ccbfcf054f3c1d4d591578",
+   "created_at": "2026-10-19T23:04:19Z",
+   "run_started_at": "2026-10-19T23:04:19Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39339225805",
+   "display_title": "Change on feature/branch-21",
+   "pull_requests": []
+  },
+  {
+   "id": 39338406296,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-21",
+   "head_sha": "739fa09f666938ad9caeaea128fceedc67c30ffd",
+   "created_at": "2026-10-19T22:56:51Z",
+   "run_started_at": "2026-10-19T22:56:51Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39338406296",
+   "display_title": "Change on feature/branch-21",
+   "pull_requests": []
+  },
+  {
+   "id": 39338128923,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-22",
+   "head_sha": "51400f5471a2af3f63907218c6e4e6536e138ffa",
+   "created_at": "2026-10-19T22:54:18Z",
+   "run_started_at": "2026-10-19T22:54:18Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39338128923",
+   "display_title": "Change on feature/branch-22",
+   "pull_requests": []
+  },
+  {
+   "id": 39337895221,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-23",
+   "head_sha": "da4a289de53516416d1565f07ad20bb7ccd64ba2",
+   "created_at": "2026-10-19T22:52:10Z",
+   "run_started_at": "2026-10-19T22:52:10Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39337895221",
+   "display_title": "Change on feature/branch-23",
+   "pull_requests": []
+  },
+  {
+   "id": 39337058166,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-24",
+   "head_sha": "040e0ec77db0d22fcae475686e3b486636027385",
+   "created_at": "2026-10-19T22:44:38Z",
+   "run_started_at": "2026-10-19T22:44:38Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39337058166",
+   "display_title": "Change on feature/branch-24",
+   "pull_requests": [
+    {
+     "number": 3072
+    }
+   ]
+  },
+  {
+   "id": 39337056435,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-25",
+   "head_sha": "8cc4df0899f0fbd7532f73e9099b572ac274cbad",
+   "created_at": "2026-10-19T22:44:37Z",
+   "run_started_at": "2026-10-19T22:44:37Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39337056435",
+   "display_title": "Change on feature/branch-25",
+   "pull_requests": [
+    {
+     "number": 3071
+    }
+   ]
+  },
+  {
+   "id": 39337054624,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-26",
+   "head_sha": "e48eaf47e70f9f4ecf1ee8d3c5d9425dde8c224e",
+   "created_at": "2026-10-19T22:44:36Z",
+   "run_started_at": "2026-10-19T22:44:36Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39337054624",
+   "display_title": "Change on feature/branch-26",
+   "pull_requests": [
+    {
+     "number": 3070
+    }
+   ]
+  },
+  {
+   "id": 39336431340,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-27",
+   "head_sha": "2889feb3f06285aba6d7db1dcce0180109fd4520",
+   "created_at": "2026-10-19T22:39:01Z",
+   "run_started_at": "2026-10-19T22:39:01Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39336431340",
+   "display_title": "Change on feature/branch-27",
+   "pull_requests": []
+  },
+  {
+   "id": 39336241739,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-28",
+   "head_sha": "1d6f9397a80b3537a995aacd5440f65c6d04b0b0",
+   "created_at": "2026-10-19T22:37:21Z",
+   "run_started_at": "2026-10-19T22:37:21Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39336241739",
+   "display_title": "Change on feature/branch-28",
+   "pull_requests": [
+    {
+     "number": 3069
+    }
+   ]
+  },
+  {
+   "id": 39335864350,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-29",
+   "head_sha": "c42147ba8a39ea5eb644be5243804a15fefa0217",
+   "created_at": "2026-10-19T22:34:08Z",
+   "run_started_at": "2026-10-19T22:34:08Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39335864350",
+   "display_title": "Change on feature/branch-29",
+   "pull_requests": []
+  },
+  {
+   "id": 39335646423,
+   "name": "CI",
+   "event": "push",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "main",
+   "head_sha": "dcfdaae2ae5d5c2668eb6a002ddf9ea55d2ddfc9",
+   "created_at": "2026-10-19T22:32:16Z",
+   "run_started_at": "2026-10-19T22:32:16Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39335646423",
+   "display_title": "Change on main",
+   "pull_requests": []
+  },
+  {
+   "id": 39335624588,
+   "name": "CI",
+   "event": "push",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "main",
+   "head_sha": "be292238745b1c38a5e07ac7e4d8a4f2a85399b6",
+   "created_at": "2026-10-19T22:32:05Z",
+   "run_started_at": "2026-10-19T22:32:05Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39335624588",
+   "display_title": "Change on main",
+   "pull_requests": []
+  },
+  {
+   "id": 39335387703,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-30",
+   "head_sha": "7201da840e49159a714a4af27fe4f1ceb52b1629",
+   "created_at": "2026-10-19T22:30:05Z",
+   "run_started_at": "2026-10-19T22:30:05Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39335387703",
+   "display_title": "Change on feature/branch-30",
+   "pull_requests": []
+  },
+  {
+   "id": 39334723674,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-4",
+   "head_sha": "40f5f0ec7352b1d08a25eb403b183f5615adb3f0",
+   "created_at": "2026-10-19T22:24:31Z",
+   "run_started_at": "2026-10-19T22:24:31Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39334723674",
+   "display_title": "Change on feature/branch-4",
+   "pull_requests": []
+  },
+  {
+   "id": 39334403477,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-25",
+   "head_sha": "c8a1f5dc9c55a1ea91ed1268f8a38173f6bab773",
+   "created_at": "2026-10-19T22:21:51Z",
+   "run_started_at": "2026-10-19T22:21:51Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39334403477",
+   "display_title": "Change on feature/branch-25",
+   "pull_requests": [
+    {
+     "number": 3071
+    }
+   ]
+  },
+  {
+   "id": 39334206469,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-31",
+   "head_sha": "a1f752126a25dc896e660ebce42ce9312469c43d",
+   "created_at": "2026-10-19T22:20:13Z",
+   "run_started_at": "2026-10-19T22:20:13Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39334206469",
+   "display_title": "Change on feature/branch-31",
+   "pull_requests": []
+  },
+  {
+   "id": 39333786379,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-32",
+   "head_sha": "53e75eb9ca2a31a62ebac15c16190a6b43f0c850",
+   "created_at": "2026-10-19T22:16:39Z",
+   "run_started_at": "2026-10-19T22:16:39Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39333786379",
+   "display_title": "Change on feature/branch-32",
+   "pull_requests": []
+  },
+  {
+   "id": 39333625889,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-33",
+   "head_sha": "a1c1a9fded7f47a6699daee436e8de36d38c3774",
+   "created_at": "2026-10-19T22:15:20Z",
+   "run_started_at": "2026-10-19T22:15:20Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39333625889",
+   "display_title": "Change on feature/branch-33",
+   "pull_requests": []
+  },
+  {
+   "id": 39333534277,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-34",
+   "head_sha": "bec6f95199765ebb1116970f48009237a52ac728",
+   "created_at": "2026-10-19T22:14:36Z",
+   "run_started_at": "2026-10-19T22:14:36Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39333534277",
+   "display_title": "Change on feature/branch-34",
+   "pull_requests": []
+  },
+  {
+   "id": 39332864099,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-35",
+   "head_sha": "c819c6d492999baf77a861e6223a48ce024e3560",
+   "created_at": "2026-10-19T22:08:59Z",
+   "run_started_at": "2026-10-19T22:08:59Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39332864099",
+   "display_title": "Change on feature/branch-35",
+   "pull_requests": []
+  },
+  {
+   "id": 39332347988,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-36",
+   "head_sha": "ef261dabf6d062003008ec32b63f36e50d12aeb9",
+   "created_at": "2026-10-19T22:04:43Z",
+   "run_started_at": "2026-10-19T22:04:43Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39332347988",
+   "display_title": "Change on feature/branch-36",
+   "pull_requests": []
+  },
+  {
+   "id": 39331023648,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-37",
+   "head_sha": "0d4cb5ce0139a7cb772530bed73a0a0559b5ddd1",
+   "created_at": "2026-10-19T21:53:52Z",
+   "run_started_at": "2026-10-19T21:53:52Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39331023648",
+   "display_title": "Change on feature/branch-37",
+   "pull_requests": []
+  },
+  {
+   "id": 39330491976,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-6",
+   "head_sha": "e2e5f12b5e0cc8fede9ecf8a9cb1a395fc24ce42",
+   "created_at": "2026-10-19T21:49:35Z",
+   "run_started_at": "2026-10-19T21:49:35Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39330491976",
+   "display_title": "Change on feature/branch-6",
+   "pull_requests": []
+  },
+  {
+   "id": 39330230845,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-38",
+   "head_sha": "8bccd7977107a01d475371379dae470eac6354da",
+   "created_at": "2026-10-19T21:47:27Z",
+   "run_started_at": "2026-10-19T21:47:27Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39330230845",
+   "display_title": "Change on feature/branch-38",
+   "pull_requests": []
+  },
+  {
+   "id": 39330174859,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "feature/branch-39",
+   "head_sha": "673af79c2f131acbab3f2599c258365012fa2283",
+   "created_at": "2026-10-19T21:47:01Z",
+   "run_started_at": "2026-10-19T21:47:01Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39330174859",
+   "display_title": "Change on feature/branch-39",
+   "pull_requests": []
+  },
+  {
+   "id": 39329921470,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-40",
+   "head_sha": "727d1b56dd8c1ebd2b396c122df6085548d6d65d",
+   "created_at": "2026-10-19T21:45:03Z",
+   "run_started_at": "2026-10-19T21:45:03Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39329921470",
+   "display_title": "Change on feature/branch-40",
+   "pull_requests": []
+  },
+  {
+   "id": 39329843503,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-41",
+   "head_sha": "e2d81c7c4983015fec123387e79378c5226e4035",
+   "created_at": "2026-10-19T21:44:28Z",
+   "run_started_at": "2026-10-19T21:44:28Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39329843503",
+   "display_title": "Change on feature/branch-41",
+   "pull_requests": []
+  },
+  {
+   "id": 39328948591,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-42",
+   "head_sha": "20ba71057d4c1d2cfc3c7b8bfe616bd478cd0b43",
+   "created_at": "2026-10-19T21:37:31Z",
+   "run_started_at": "2026-10-19T21:37:31Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39328948591",
+   "display_title": "Change on feature/branch-42",
+   "pull_requests": []
+  },
+  {
+   "id": 39327551486,
+   "name": "CI",
+   "event": "push",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "main",
+   "head_sha": "874ea53d508905769e8ae3ef12b8077e879a884e",
+   "created_at": "2026-10-19T21:26:49Z",
+   "run_started_at": "2026-10-20T04:27:24Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39327551486",
+   "display_title": "Change on main",
+   "pull_requests": []
+  },
+  {
+   "id": 39327028478,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-43",
+   "head_sha": "4e241d726185eaab9352ef314ac03d95502d111a",
+   "created_at": "2026-10-19T21:22:53Z",
+   "run_started_at": "2026-10-19T21:22:53Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39327028478",
+   "display_title": "Change on feature/branch-43",
+   "pull_requests": []
+  },
+  {
+   "id": 39327024201,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-44",
+   "head_sha": "c36c067341474c6be1d652767d5faaded329d1bd",
+   "created_at": "2026-10-19T21:22:51Z",
+   "run_started_at": "2026-10-19T21:22:51Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39327024201",
+   "display_title": "Change on feature/branch-44",
+   "pull_requests": []
+  }
+ ],
+ "recentMainRuns": [],
+ "redMainJobs": [],
+ "pullRequests": {
+  "feature/branch-26": {
+   "number": 3070,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-26"
+  },
+  "feature/branch-25": {
+   "number": 3071,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-25"
+  },
+  "feature/branch-28": {
+   "number": 3069,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-28"
+  },
+  "feature/branch-24": {
+   "number": 3072,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-24"
+  },
+  "feature/branch-22": {
+   "number": 3078,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-22"
+  },
+  "feature/branch-11": {
+   "number": 3095,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-11"
+  },
+  "feature/branch-20": {
+   "number": 3084,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-20"
+  },
+  "feature/branch-10": {
+   "number": 3096,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-10"
+  },
+  "feature/branch-13": {
+   "number": 3094,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-13"
+  },
+  "feature/branch-12": {
+   "number": 3093,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-12"
+  },
+  "feature/branch-14": {
+   "number": 3092,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-14"
+  },
+  "feature/branch-15": {
+   "number": 3090,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-15"
+  },
+  "feature/branch-16": {
+   "number": 3089,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-16"
+  },
+  "feature/branch-17": {
+   "number": 3088,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-17"
+  },
+  "feature/branch-18": {
+   "number": 3087,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-18"
+  },
+  "feature/branch-8": {
+   "number": 3086,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-8"
+  },
+  "feature/branch-19": {
+   "number": 3083,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-19"
+  },
+  "feature/branch-9": {
+   "number": 3079,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-9"
+  },
+  "feature/branch-7": {
+   "number": 3085,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-7"
+  },
+  "feature/branch-21": {
+   "number": 3080,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-21"
+  },
+  "feature/branch-23": {
+   "number": 3077,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-23"
+  },
+  "feature/branch-27": {
+   "number": 3075,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-27"
+  },
+  "feature/branch-43": {
+   "number": 3042,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-43"
+  },
+  "feature/branch-29": {
+   "number": 3074,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-29"
+  },
+  "feature/branch-30": {
+   "number": 3052,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-30"
+  },
+  "feature/branch-31": {
+   "number": 3046,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-31"
+  },
+  "feature/branch-32": {
+   "number": 3068,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-32"
+  },
+  "feature/branch-33": {
+   "number": 3067,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-33"
+  },
+  "feature/branch-4": {
+   "number": 3060,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-4"
+  },
+  "feature/branch-39": {
+   "number": 3057,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-39"
+  },
+  "feature/branch-34": {
+   "number": 3051,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-34"
+  },
+  "feature/branch-35": {
+   "number": 3022,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-35"
+  },
+  "feature/branch-36": {
+   "number": 3020,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-36"
+  },
+  "feature/branch-37": {
+   "number": 3016,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-37"
+  },
+  "feature/branch-42": {
+   "number": 3064,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-42"
+  },
+  "feature/branch-40": {
+   "number": 3063,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-40"
+  },
+  "feature/branch-38": {
+   "number": 3061,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-38"
+  },
+  "feature/branch-6": {
+   "number": 3062,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-6"
+  },
+  "feature/branch-41": {
+   "number": 3004,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-41"
+  },
+  "feature/branch-44": {
+   "number": 3040,
+   "state": "closed",
+   "merged": true,
+   "headBranch": "feature/branch-44"
+  }
+ }
+}

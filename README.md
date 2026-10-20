@@ -773,6 +773,14 @@ Docker fails with a permission error:
   services after changing group membership.
 - Remember that this permission is root-equivalent inside the guest.
 
+## Menu bar app
+
+`app/` is a native macOS menu bar app that watches this fleet (and Mac launchd runners and
+Linux servers) with read-only probes and the GitHub API, reports service levels and
+machine-caused failures, and changes runners only through plans you review. Lifecycle plans for
+OrbStack and Linux-server fleets run this repository's own scripts, so every check above still
+applies. Build, setup and safety rules: [app/README.md](app/README.md).
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, required checks, and pull

@@ -1,0 +1,3 @@
+[
+ "System.IO.IOException: No space left on device : '/Users/builder2/actions-runners.noindex/ci-m4-check-1/_diag/Worker_20261020-005126-utc.log'\n   at System.IO.RandomAccess.WriteAtOffset(SafeFileHandle handle, ReadOnlySpan`1 buffer, Int64 fileOffset)\n   at System.IO.Strategies.OSFileStreamStrategy.Write(ReadOnlySpan`1 buffer)\n   at System.IO.StreamWriter.Flush(Boolean flushStream, Boolean flushEncod"
+]

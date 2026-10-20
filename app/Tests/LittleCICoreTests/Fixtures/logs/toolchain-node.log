@@ -1,0 +1,24 @@
+2026-10-19T17:44:38.4414980Z ##[start-action display=Check Bun and Node versions;id=__self.__run]
+2026-10-19T17:44:38.4493690Z ##[group]Run wanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"
+2026-10-19T17:44:38.4494150Z [36;1mwanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"[0m
+2026-10-19T17:44:38.4494490Z [36;1mhave="$(bun --version)"[0m
+2026-10-19T17:44:38.4494860Z [36;1mecho "bun $have, node $(node --version), $(sysctl -n hw.ncpu) cores, load $(sysctl -n vm.loadavg)"[0m
+2026-10-19T17:44:38.4495240Z [36;1mif [ "$have" != "$wanted" ]; then[0m
+2026-10-19T17:44:38.4495760Z [36;1m  echo "::error::The M1 has Bun $have; package.json asks for $wanted. On the M1: bun upgrade (or curl -fsSL https://bun.sh/install | bash -s bun-v$wanted)"[0m
+2026-10-19T17:44:38.4496250Z [36;1m  exit 1[0m
+2026-10-19T17:44:38.4496700Z [36;1mfi[0m
+2026-10-19T17:44:38.4496990Z [36;1mnode -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' ||[0m
+2026-10-19T17:44:38.4497430Z [36;1m  { echo "::error::The M1 needs Node 24 or newer: brew upgrade node"; exit 1; }[0m
+2026-10-19T17:44:38.4534790Z shell: /opt/homebrew/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-19T17:44:38.4535070Z env:
+2026-10-19T17:44:38.4535200Z   CI: true
+2026-10-19T17:44:38.4535340Z   TURBO_TELEMETRY_DISABLED: 1
+2026-10-19T17:44:38.4535530Z   GIT_AUTHOR_NAME: Example CI
+2026-10-19T17:44:38.5029260Z /Users/builder1/actions-runners/ci-m1-check-3/_work/_temp/053a99c9-177e-4834-afb9-f60e164571ca.sh: line 3: node: command not found
+2026-10-19T17:44:38.5096980Z bun 1.3.14, node , 10 cores, load { 54.74 75.13 106.73 }
+2026-10-19T17:44:38.5102930Z /Users/builder1/actions-runners/ci-m1-check-3/_work/_temp/053a99c9-177e-4834-afb9-f60e164571ca.sh: line 8: node: command not found
+2026-10-19T17:44:38.5122890Z ##[error]The M1 needs Node 24 or newer: brew upgrade node
+2026-10-19T17:44:38.5126170Z ##[error]Process completed with exit code 1.
+2026-10-19T17:44:38.5137560Z ##[end-action id=__self.__run;outcome=failure;conclusion=failure;duration_ms=72]
+2026-10-19T17:44:38.5140670Z ##[start-action display=Use the job's temporary folder;id=__self.__run_2]
+2026-10-19T17:44:38.5143410Z ##[end-action id=__self.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]

@@ -1,0 +1,47 @@
+2026-10-20T07:28:34.0394020Z ##[start-action display=Check Bun and Node versions;id=__self.__run]
+2026-10-20T07:28:34.0459100Z ##[group]Run wanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"
+2026-10-20T07:28:34.0459530Z [36;1mwanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"[0m
+2026-10-20T07:28:34.0459740Z [36;1mhave="$(bun --version)"[0m
+2026-10-20T07:28:34.0459980Z [36;1mecho "bun $have, node $(node --version), $(sysctl -n hw.ncpu) cores, load $(sysctl -n vm.loadavg)"[0m
+2026-10-20T07:28:34.0460240Z [36;1mif [ "$have" != "$wanted" ]; then[0m
+2026-10-20T07:28:34.0460590Z [36;1m  echo "::error::The M1 has Bun $have; package.json asks for $wanted. On the M1: bun upgrade (or curl -fsSL https://bun.sh/install | bash -s bun-v$wanted)"[0m
+2026-10-20T07:28:34.0460920Z [36;1m  exit 1[0m
+2026-10-20T07:28:34.0461020Z [36;1mfi[0m
+2026-10-20T07:28:34.0461210Z [36;1mnode -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' ||[0m
+2026-10-20T07:28:34.0461510Z [36;1m  { echo "::error::The M1 needs Node 24 or newer: brew upgrade node"; exit 1; }[0m
+2026-10-20T07:28:34.0572540Z shell: /opt/homebrew/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-20T07:28:34.0572760Z env:
+2026-10-20T07:28:34.0572870Z   CI: true
+2026-10-20T07:28:34.0572980Z   TURBO_TELEMETRY_DISABLED: 1
+2026-10-20T07:28:34.0573100Z   LW_JOB_CONCURRENCY: 3
+2026-10-20T07:29:37.8680170Z   Expected: 5
+2026-10-20T07:29:37.8698120Z   Received: 6
+2026-10-20T07:29:37.8780080Z         at <anonymous> (/Users/builder2/actions-runners.noindex/ci-m4-check-1/_work/example-repo/example-repo/packages/example/src/example.test.ts:1649:23)
+2026-10-20T07:29:37.9103610Z ##[error]Expected: 5
+Received: 6
+
+      at <anonymous> (/Users/builder2/actions-runners.noindex/ci-m4-check-1/_work/example-repo/example-repo/packages/example/src/example.test.ts:1649:23)
+2026-10-20T07:29:37.9694270Z   Expected: 6
+2026-10-20T07:29:37.9694510Z   Received: 7
+2026-10-20T07:29:37.9695560Z         at <anonymous> (/Users/builder2/actions-runners.noindex/ci-m4-check-1/_work/example-repo/example-repo/packages/example/src/example.test.ts:1703:23)
+2026-10-20T07:29:37.9699850Z ##[error]Expected: 6
+Received: 7
+
+      at <anonymous> (/Users/builder2/actions-runners.noindex/ci-m4-check-1/_work/example-repo/example-repo/packages/example/src/example.test.ts:1703:23)
+2026-10-20T07:29:37.9717440Z ##[endgroup]
+2026-10-20T07:29:37.9717710Z   7 tests failed:
+2026-10-20T07:29:37.9718310Z   (fail) test 1 [5025.92ms]
+2026-10-20T07:29:37.9719030Z     ^ this test timed out after 5000ms.
+2026-10-20T07:29:37.9719710Z   (fail) test 2 [183.64ms]
+2026-10-20T07:29:37.9720690Z   (fail) test 3 [5019.38ms]
+2026-10-20T07:29:37.9721380Z     ^ this test timed out after 5000ms.
+2026-10-20T07:29:37.9729260Z   (fail) test 4 [137.26ms]
+2026-10-20T07:29:37.9729820Z   (fail) test 5 [75.62ms]
+2026-10-20T07:29:37.9730510Z   (fail) test 6 [203.11ms]
+2026-10-20T07:32:59.8527200Z pass @app/package: typecheck pass 6s
+2026-10-20T07:32:59.8527400Z Changed-package check failed: 2 of 20 checks failed in 3m 52s.
+2026-10-20T07:32:59.9016790Z error: script "check:changed" exited with code 1
+2026-10-20T07:32:59.9152510Z ##[error]Process completed with exit code 1.
+2026-10-20T07:33:00.0147060Z Post job cleanup.
+2026-10-20T07:33:00.6030280Z [command]/opt/homebrew/bin/git version
+2026-10-20T07:33:00.6463630Z git version 2.55.0

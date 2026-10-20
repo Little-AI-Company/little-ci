@@ -1,0 +1,76 @@
+{
+  "github": {
+    "scope": "repository",
+    "owner": "example-owner",
+    "repository": "example-repo"
+  },
+  "hosts": [
+    {
+      "id": "m1",
+      "name": "M1",
+      "kind": {
+        "type": "macLaunchd",
+        "user": "builder1",
+        "runnerRoot": "/Users/builder1/actions-runners.noindex",
+        "serviceLabelPrefix": "com.example.ci-runner."
+      },
+      "access": "local",
+      "lendable": true,
+      "runners": [
+        { "name": "ci-m1-check-1", "labels": ["example-repo-m1", "example-repo-check"] },
+        { "name": "ci-m1-check-2", "labels": ["example-repo-m1", "example-repo-check"] },
+        { "name": "ci-m1-check-3", "labels": ["example-repo-m1", "example-repo-check"] },
+        { "name": "ci-m1-check-4", "labels": ["example-repo-m1", "example-repo-check"] },
+        { "name": "ci-m1-candidate-1", "labels": ["example-repo-m1", "example-repo-candidate"] }
+      ]
+    },
+    {
+      "id": "m4",
+      "name": "M4",
+      "kind": {
+        "type": "macLaunchd",
+        "user": "builder2",
+        "runnerRoot": "/Users/builder2/actions-runners.noindex",
+        "serviceLabelPrefix": "com.example.ci-runner."
+      },
+      "access": "ssh:builder2@studio-m4.local",
+      "lendable": false,
+      "maxConcurrentJobs": 2,
+      "runners": [
+        { "name": "ci-m4-check-1", "labels": ["example-repo-m4", "example-repo-check"] },
+        { "name": "ci-m4-check-2", "labels": ["example-repo-m4", "example-repo-check"] },
+        { "name": "ci-m4-candidate-1", "labels": ["example-repo-m4", "example-repo-candidate"] }
+      ]
+    },
+    {
+      "id": "m3",
+      "name": "M3",
+      "kind": {
+        "type": "macLaunchd",
+        "user": "builder3",
+        "runnerRoot": "/Users/builder3/example-repo-ci/runners",
+        "serviceLabelPrefix": "com.example.ci-runner."
+      },
+      "access": "ssh:builder3@studio-m3.local",
+      "lendable": false,
+      "runners": [
+        { "name": "ci-m3-check-1", "labels": ["example-repo-m3", "example-repo-check"] },
+        { "name": "ci-m3-check-2", "labels": ["example-repo-m3", "example-repo-check"] },
+        { "name": "ci-m3-check-3", "labels": ["example-repo-m3", "example-repo-check"] }
+      ]
+    }
+  ],
+  "serviceLevels": {
+    "queueWaitMedianSeconds": 120,
+    "queueWaitP90Seconds": 900,
+    "minimumAvailableCheckRunners": 4,
+    "detectDeadRunnerSeconds": 120,
+    "maximumMachineFailureShare": 0.05
+  },
+  "queue": {
+    "platformBranchPrefixes": ["platform", "parity"],
+    "performanceBranchPrefixes": ["webapp-perf", "desktop-perf", "iphone-perf", "perf/"],
+    "checkWorkflow": "CI",
+    "checkLabel": "example-repo-check"
+  }
+}

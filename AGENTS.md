@@ -46,6 +46,22 @@ Shared/read-only operations:
 - `lib/orbstack-machine.sh` is the single source of truth for OrbStack JSON
   validation and protected machine identity.
 - `config.env.example` is the canonical public configuration contract.
+
+Mac menu bar app (`app/`, Swift 6, SwiftPM):
+
+- `LittleCICore` has no UI imports. Probes (`ProbeScripts.swift`) are read-only Bash,
+  one per host kind, sent on stdin and answered with one JSON object; `ProbeParser` turns their
+  output into typed facts. `Assessor` is pure: observations in, findings, plans, queue and
+  service levels out. `PlanExecutor` is the only path that changes anything.
+- Plans call this repository's scripts for OrbStack and Linux-server fleets. Do not reimplement
+  their identity, busy or teardown checks in Swift.
+- Every plan precondition is re-read immediately before execution; a review is single use,
+  expires after 15 minutes, and is refused if the re-derived plan differs.
+- Tokens are fetched in memory and written only to the one command's stdin. Never pass one
+  as an argument, environment value on a command line, log line or API field.
+- This repository is public: test fixtures are excerpts of recorded output with private host,
+  user, repository and branch names replaced (`app/Tests/LittleCICoreTests/Fixtures/README.md`).
+- Run `swift test --package-path app` when changing `app/`.
 - `examples/` contains opt-in consuming-project workflows, not workflows that
   operate this repository automatically.
 

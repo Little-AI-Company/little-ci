@@ -1,0 +1,18 @@
+{
+ "id": 118377937474,
+ "run_id": 39334723674,
+ "name": "Database suite 1",
+ "status": "completed",
+ "conclusion": "failure",
+ "created_at": "2026-10-20T00:07:55Z",
+ "started_at": "2026-10-20T03:53:21Z",
+ "completed_at": "2026-10-20T03:53:45Z",
+ "runner_name": "ci-m3-check-1",
+ "labels": [
+  "self-hosted",
+  "example-repo-check"
+ ],
+ "head_sha": "40f5f0ec7352b1d08a25eb403b183f5615adb3f0",
+ "head_branch": "feature/branch-4",
+ "run_attempt": 1
+}
