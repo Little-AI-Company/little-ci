@@ -1,14 +1,43 @@
+<p align="center">
+  <img src="assets/banner.png" alt="little ci: GitHub Actions runners on your own Mac" width="880">
+</p>
+
 # Little-CI
 
-Little-CI runs a small, persistent fleet of GitHub Actions self-hosted runners in
-an isolated Ubuntu machine on an Apple Silicon Mac. OrbStack is the primary host;
-a dedicated Ubuntu server such as a Hetzner VM remains supported as a secondary
-deployment.
+Your Mac can run your CI. Little-CI turns an Apple Silicon Mac into a small fleet
+of GitHub Actions runners. Your jobs run on hardware you already own, with caches
+that stay warm between runs and no per-minute bill.
 
-The project provisions the Linux guest, registers one or more runner services,
-keeps their scratch space under control, and provides fleet-specific health and
-lifecycle commands. The safe default is one runner with 2 CPUs, 4 GB memory, and
-a 48 GB disk. Increase that only after measuring your jobs on the host Mac.
+Fill in `config.env`, then three commands set it up:
+
+```bash
+./provision-orbstack.sh    # build an isolated Ubuntu machine in OrbStack
+./install-runners-orb.sh   # register runners for your repository or organization
+./check-runners.sh         # confirm every runner is online
+```
+
+Then point a workflow at it with `runs-on: [self-hosted, little-ci]`.
+
+## Why this exists
+
+Hosted runners start cold for every job and bill by the minute. A self-hosted
+runner fixes both, but setting one up by hand on a Mac is fiddly, and it is easy
+to give workflow code more access to your Mac than you meant to.
+
+Little-CI does the careful version for you:
+
+- **Isolated.** Runners live in an Ubuntu 24.04 machine with no Mac folders, no
+  SSH agent, and no network access to your Mac or other OrbStack machines.
+- **Scoped.** Each fleet belongs to one repository or organization. Health checks
+  and teardown touch only that fleet, never your other runners.
+- **Safe to operate.** Updates and removal refuse to interrupt a busy job, and an
+  interrupted teardown can be retried.
+- **Small.** Bash and the Python standard library, with tests that need no live
+  machine or GitHub token.
+
+It defaults to one runner with 2 CPUs, 4 GB of memory, and a 48 GB disk. Add more
+after you measure your jobs. A plain Ubuntu server, such as a Hetzner VM, also
+works.
 
 > [!WARNING]
 > A self-hosted runner executes repository workflow code with the runner user's
@@ -49,7 +78,7 @@ Clone Little-CI and create the local configuration:
 
 ```bash
 git clone https://github.com/ParkerRex/little-ci.git
-cd Little-CI
+cd little-ci
 cp config.env.example config.env
 $EDITOR config.env
 ```
