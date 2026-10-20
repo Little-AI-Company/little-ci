@@ -11,14 +11,16 @@ swift build --package-path "$app_dir" -c release --product LittleCI
 binary="$(swift build --package-path "$app_dir" -c release --show-bin-path)/LittleCI"
 
 rm -rf "$bundle"
-mkdir -p "$bundle/Contents/MacOS"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
 cp "$binary" "$bundle/Contents/MacOS/LittleCI"
+cp "$app_dir/../assets/icon.icns" "$bundle/Contents/Resources/LittleCI.icns"
 cat >"$bundle/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key><string>LittleCI</string>
+  <key>CFBundleIconFile</key><string>LittleCI</string>
   <key>CFBundleIdentifier</key><string>dev.little-ci.menubar</string>
   <key>CFBundleName</key><string>Little CI</string>
   <key>CFBundlePackageType</key><string>APPL</string>

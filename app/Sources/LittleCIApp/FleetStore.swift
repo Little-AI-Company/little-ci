@@ -14,15 +14,24 @@ final class FleetStore {
     private(set) var outcome: PlanOutcome?
 
     private var monitor: FleetMonitor?
+    private var launchedInDemo = false
     private var liveState: FleetState?
     private var apiServer: LocalAPIServer?
     /// Nil until the first state arrives; then history already on disk counts as announced.
     private var announced: Set<UUID>?
     private let apiState = APIStateBox()
 
+    /// Starts live monitoring, unless the app was launched with demo data (then it waits until demo is turned off).
     func start() {
+        if LaunchOptions.current.demo, !launchedInDemo {
+            launchedInDemo = true
+            setDemo(true)
+        }
+        if !isDemo { startLive() }
+    }
+
+    private func startLive() {
         guard monitor == nil, setupProblem == nil else { return }
-        if LaunchOptions.current.demo { setDemo(true) }
         let inventory: Inventory
         do {
             inventory = try Inventory.load(from: AppPaths.inventory)
@@ -58,6 +67,7 @@ final class FleetStore {
         isDemo = on
         state = on ? DemoFleet.state() : liveState
         Task { await apiState.set(state) }
+        if !on { startLive() }
     }
 
     func setLent(_ hostID: String, _ lent: Bool) {
