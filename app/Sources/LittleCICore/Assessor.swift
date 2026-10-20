@@ -112,8 +112,10 @@ public enum Assessor {
             for runner in host.runners { assess(runner, on: host, facts: facts, mayTakeJobs: mayTakeJobs) }
             switch host.kind {
             case .macLaunchd:
-                plans += host.runners.compactMap { runner in facts.runner(named: runner.name).flatMap {
-                    $0.registeredURL != nil ? PlanFactory.retireLaunchdRunner(host, runner.name, inventory: inventory) : nil } }
+                // Retire only a runner whose own registration names this target and this exact runner.
+                plans += host.runners.compactMap { runner in facts.runner(named: runner.name).flatMap { local in
+                    local.registeredURL == inventory.github.registrationURL && local.registeredName == runner.name
+                        ? PlanFactory.retireLaunchdRunner(host, runner.name, inventory: inventory) : nil } }
             case .orbstackVM(let vm):
                 switch assessVirtualMachine(host, vm, facts) {
                 case .absent: plans += PlanFactory.lifecyclePlans(host, inventory: inventory, machineExists: false)
@@ -212,7 +214,13 @@ public enum Assessor {
         /// little-ci's isolation invariants, checked on every observation.
         mutating func assessVirtualMachine(_ host: HostSpec, _ vm: OrbStackVMHost, _ facts: HostFacts) -> MachineState {
             guard let machine = facts.virtualMachine else { return .mismatched }
-            guard machine.info != nil else {
+            if machine.machineState == .unreadable {
+                add(Finding(id: "vm.\(host.id).identity", severity: .critical, subject: .host(host.id),
+                            title: "OrbStack machine \(vm.machine) could not be read", evidence: ["orbctl info failed or returned unreadable JSON"],
+                            suggestedAction: "No plan is offered until orbctl info reads cleanly. Check OrbStack."))
+                return .mismatched
+            }
+            guard machine.machineState == .present else {
                 add(Finding(id: "vm.\(host.id).absent", severity: .info, subject: .host(host.id),
                             title: "OrbStack machine \(vm.machine) does not exist", evidence: ["orbctl info \(vm.machine) failed"],
                             suggestedAction: "Bring it up when you want this fleet."))

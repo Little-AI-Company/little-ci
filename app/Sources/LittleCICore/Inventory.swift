@@ -123,6 +123,13 @@ public struct GitHubTarget: Codable, Sendable, Equatable {
     }
 
     public var repositoryPath: String { "repos/\(owner)/\(repository)" }
+    /// The URL a runner registered to this target records in its `.runner` file.
+    public var registrationURL: String {
+        switch scope {
+        case .repository: "https://github.com/\(owner)/\(repository)"
+        case .organization: "https://github.com/\(owner)"
+        }
+    }
     /// Where runners, registration and removal tokens live for this scope.
     public var runnersPath: String {
         switch scope {

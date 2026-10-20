@@ -37,7 +37,7 @@ public enum DemoFleet {
     static func observations(now: Date) -> FleetObservations {
         let gib: Int64 = 1 << 30
         func runner(_ name: String, _ service: RunnerServiceFacts.ServiceState, node: String = "v24.14.1") -> RunnerServiceFacts {
-            RunnerServiceFacts(name: name, directoryExists: true, registeredURL: "https://github.com/acme/widgets",
+            RunnerServiceFacts(name: name, directoryExists: true, registeredURL: "https://github.com/acme/widgets", registeredName: name,
                                serviceDefinitionExists: true, service: service, bunVersion: "1.3.14", nodeVersion: node)
         }
         func facts(_ hostname: String, load: Double, cores: Int, dataFree: Int64, docker: Bool, runners: [RunnerServiceFacts]) -> HostFacts {

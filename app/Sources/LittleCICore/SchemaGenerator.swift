@@ -241,6 +241,7 @@ extension QueueLane: SchemaEnum {}
 extension QueueEntry.Disposition: SchemaEnum {}
 extension FailureClass.Cause: SchemaEnum {}
 extension DataSource: SchemaEnum {}
+extension OrbStackVMFacts.MachineState: SchemaEnum {}
 
 extension HostAccess: SchemaDescribed {
     public static func jsonSchema(_ generator: SchemaGenerator) -> JSONValue {

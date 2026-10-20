@@ -227,6 +227,8 @@ public struct RunnerServiceFacts: Codable, Sendable, Equatable {
     public var directoryExists: Bool
     /// From the runner's `.runner` file; only the URL and name are read, never credentials.
     public var registeredURL: String?
+    /// The runner name in `.runner` (`agentName`).
+    public var registeredName: String?
     public var serviceDefinitionExists: Bool
     public var service: ServiceState
     public var bunVersion: String?

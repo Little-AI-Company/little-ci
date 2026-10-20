@@ -38,8 +38,8 @@ public enum ProbeParser {
         case .linuxServer: return try parseLinux(envelope.sections, runners: host.runners.map(\.name), observedAt: observedAt)
         case .orbstackVM:
             let machine = try parseOrbStackVM(output)
-            if machine.info == nil {
-                // The machine does not exist: no guest to read, but the Mac side answered.
+            if machine.machineState != .present {
+                // No guest to read (absent or unreadable), but the Mac side answered.
                 return HostFacts(probeVersion: ProbeScript.version, observedAt: observedAt, hostname: "", userID: nil, cpuCount: nil,
                                  memoryBytes: nil, loadAverage: [], memoryFreePercent: nil, swapUsedBytes: nil, swapTotalBytes: nil,
                                  onACPower: nil, volumes: [], docker: nil, orbstack: nil, virtualMachine: machine, runners: [],
@@ -56,13 +56,18 @@ public enum ProbeParser {
     /// VM-level facts that only the Mac side of an OrbStack probe has.
     public static func parseOrbStackVM(_ output: Data) throws -> OrbStackVMFacts {
         let sections = try decodeEnvelope(output).sections
-        let info = sections["vm_info"].flatMap { section -> OrbStackVMFacts.Info? in
+        let section = sections["vm_info"]
+        let info = section.flatMap { section -> OrbStackVMFacts.Info? in
             guard section.succeeded else { return nil }
             return try? JSONDecoder().decode(OrbStackVMFacts.Info.self, from: Data(section.text.utf8))
         }
+        let state: OrbStackVMFacts.MachineState = if info != nil { .present }
+            else if let section, !section.succeeded, section.text.contains("machine not found") { .absent }
+            else { .unreadable }
         let mounts = sections["vm_mounts"]
         let identity = sections["vm_identity"]
         return OrbStackVMFacts(
+            machineState: state,
             info: info,
             mountsReadable: mounts?.succeeded ?? false,
             mounts: mounts?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
@@ -130,6 +135,7 @@ public enum ProbeParser {
             name: name,
             directoryExists: sections[prefix + "directory"]?.succeeded ?? false,
             registeredURL: registeredURL(sections[prefix + "registration"]),
+            registeredName: registeredName(sections[prefix + "registration"]),
             serviceDefinitionExists: sections[prefix + "definition"]?.succeeded ?? false,
             service: serviceState,
             bunVersion: version(sections[prefix + "bun"]),
@@ -197,6 +203,7 @@ public enum ProbeParser {
             name: name,
             directoryExists: sections[prefix + "directory"]?.succeeded ?? false,
             registeredURL: registeredURL(sections[prefix + "registration"]),
+            registeredName: registeredName(sections[prefix + "registration"]),
             serviceDefinitionExists: sections[prefix + "definition"]?.succeeded ?? false,
             service: serviceState,
             bunVersion: nil,
@@ -266,6 +273,10 @@ public enum ProbeParser {
         section?.text.firstMatch(of: /"gitHubUrl": *"([^"]*)"/).map { String($0.1) }
     }
 
+    static func registeredName(_ section: Section?) -> String? {
+        section?.text.firstMatch(of: /"agentName": *"([^"]*)"/).map { String($0.1) }
+    }
+
     static func version(_ section: Section?) -> String? {
         guard let section, section.succeeded else { return nil }
         let text = section.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -274,6 +285,9 @@ public enum ProbeParser {
 }
 
 public struct OrbStackVMFacts: Codable, Sendable, Equatable {
+    /// `absent` only when `orbctl info` said "machine not found"; anything else unreadable fails closed.
+    public enum MachineState: String, Codable, Sendable, CaseIterable { case present, absent, unreadable }
+
     public struct Info: Codable, Sendable, Equatable {
         public struct Record: Codable, Sendable, Equatable {
             public var name: String
@@ -306,6 +320,7 @@ public struct OrbStackVMFacts: Codable, Sendable, Equatable {
         public var record: Record
     }
 
+    public var machineState: MachineState
     public var info: Info?
     public var mountsReadable: Bool
     public var mounts: String

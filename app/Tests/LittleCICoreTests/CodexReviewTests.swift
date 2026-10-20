@@ -16,7 +16,7 @@ struct CodexReviewTests {
                                                  image: .init(distro: "ubuntu", arch: "arm64"), config: config,
                                                  osRelease: .init(versionID: "24.04"))
         var facts = ProbeFixture("m1-macos").facts(for: "m1")
-        facts.virtualMachine = OrbStackVMFacts(info: .init(record: record), mountsReadable: true, mounts: "", identity: identity)
+        facts.virtualMachine = OrbStackVMFacts(machineState: .present, info: .init(record: record), mountsReadable: true, mounts: "", identity: identity)
         return (inventory, HostObservation(hostID: "vm", attemptedAt: Fixture.now, outcome: .reached(facts)))
     }
 
@@ -148,5 +148,64 @@ struct CodexReviewTests {
                                          now: Fixture.now)
         #expect(assessment.finding("vm.vm.identity")?.evidence.contains("default user is admin, expected deploy") == true)
         #expect(assessment.plans.filter { $0.subject == .host("vm") }.isEmpty)
+    }
+
+    @Test("Lifecycle plans start by checking the checkout's config.env against the reviewed values", arguments: [
+        ("FLEET_ID=studio", true), ("FLEET_ID=laptop", false), ("FLEET_ID=studio\nRUNNER_USER=admin", false),
+    ])
+    func configurationCheck(config: String, matches: Bool) async throws {
+        let checkout = FileManager.default.temporaryDirectory.appendingPathComponent("little-ci-check-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: checkout) }
+        let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
+        try FileManager.default.createDirectory(at: checkout.appendingPathComponent("lib"), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: repository.appendingPathComponent("lib/github-target.sh"),
+                                         to: checkout.appendingPathComponent("lib/github-target.sh"))
+        try "GITHUB_SCOPE=repository\nGITHUB_URL=https://github.com/example-owner/example-repo\n\(config)\n"
+            .write(to: checkout.appendingPathComponent("config.env"), atomically: true, encoding: .utf8)
+
+        let prefix = "little-ci-example-owner-example-repo-studio"
+        let vm = HostSpec(id: "vm", name: "VM", kind: .orbstackVM(OrbStackVMHost(parentHost: "m1", machine: prefix, runnerUser: "deploy",
+                          fleetPrefix: prefix, littleCICheckout: checkout.path)), access: .local, runners: [])
+        var inventory = Fixture.inventory
+        inventory.hosts.append(vm)
+        let plans = PlanFactory.lifecyclePlans(vm, inventory: inventory)
+        #expect(plans.allSatisfy { $0.steps.first?.description.hasPrefix("Check that") == true })
+        guard case .localCommand(let check)? = plans.first?.steps.first?.action else {
+            Issue.record("the first step is not a local check")
+            return
+        }
+        let result = try await ProcessCommandRunner().run(check, standardInput: nil, timeout: .seconds(20))
+        #expect((result.exitCode == 0) == matches, "\(result.errorText)")
+    }
+
+    @Test("Retire is offered only for a runner whose .runner names this target and this runner")
+    func retireNeedsOwnership() {
+        let m1 = ProbeFixture("m1-macos")
+        let snapshot = Fixture.snapshot(online: [])
+        func retirePlans(_ probe: ProbeFixture) -> [String] {
+            assess(github: snapshot, hosts: ["m1": probe.observation(for: "m1")]).plans.map(\.id).filter { $0.hasPrefix("retire.") }
+        }
+        #expect(retirePlans(m1).contains("retire.ci-m1-check-1"))
+        let otherRepository = m1.replacing("runner.ci-m1-check-1.registration",
+                                           with: "\"agentName\": \"ci-m1-check-1\"\n\"gitHubUrl\": \"https://github.com/example-owner/other\"")
+        #expect(!retirePlans(otherRepository).contains("retire.ci-m1-check-1"))
+        let otherName = m1.replacing("runner.ci-m1-check-1.registration",
+                                     with: "\"agentName\": \"ci-m1-check-9\"\n\"gitHubUrl\": \"https://github.com/example-owner/example-repo\"")
+        #expect(!retirePlans(otherName).contains("retire.ci-m1-check-1"))
+    }
+
+    @Test("Only orbctl's own \"machine not found\" counts as absent; unreadable info offers no plan", arguments: [
+        (1, "[-32098] machine not found: 'little-ci-example'", OrbStackVMFacts.MachineState.absent),
+        (0, "{\"unexpected\": true}", .unreadable),
+        (1, "OrbStack is not running", .unreadable),
+    ])
+    func machineStates(exit: Int, output: String, expected: OrbStackVMFacts.MachineState) throws {
+        let envelope: [String: Any] = ["probeVersion": 1, "sections": [
+            "vm_info": ["exit": exit, "output": Data(output.utf8).base64EncodedString()],
+            "vm_mounts": ["exit": 0, "output": ""],
+            "vm_identity": ["exit": 1, "output": ""],
+        ]]
+        let facts = try ProbeParser.parseOrbStackVM(JSONSerialization.data(withJSONObject: envelope))
+        #expect(facts.machineState == expected)
     }
 }

@@ -104,6 +104,33 @@ public enum PlanFactory {
     // MARK: little-ci fleets (OrbStack VM, Linux server)
 
     /// Bring-up and teardown through little-ci's own scripts, which carry its identity, busy and teardown checks.
+    /// Loads a little-ci checkout's config.env the way its scripts do (lib/github-target.sh) and exits 1, before
+    /// anything changes, when the effective scope, target, prefix, user or machine differs from the reviewed plan.
+    static let configurationCheck = #"""
+        set -euo pipefail
+        cd "$1"
+        . ./lib/github-target.sh
+        if [ -f ./config.env ]; then . ./config.env; fi
+        github_target_init >/dev/null
+        github_fleet_init >/dev/null
+        RUNNER_USER="${RUNNER_USER:-deploy}"
+        ORB_MACHINE="${ORB_MACHINE:-$RUNNER_NAME_PREFIX}"
+        mismatch=0
+        check() { if [ "$2" != "$3" ]; then echo "config.env gives $1 '$2'; the reviewed plan expects '$3'" >&2; mismatch=1; fi; }
+        check GITHUB_SCOPE "$GITHUB_SCOPE" "$2"
+        check GITHUB_TARGET "$GITHUB_TARGET" "$3"
+        check RUNNER_NAME_PREFIX "$RUNNER_NAME_PREFIX" "$4"
+        check RUNNER_USER "$RUNNER_USER" "$5"
+        if [ -n "${6:-}" ]; then check ORB_MACHINE "$ORB_MACHINE" "$6"; fi
+        exit "$mismatch"
+        """#
+
+    static func configurationArguments(_ checkout: String, _ inventory: Inventory, prefix: String, user: String, machine: String?) -> [String] {
+        let github = inventory.github
+        let target = github.scope == .repository ? "\(github.owner)/\(github.repository)" : github.owner
+        return [checkout, github.scope.rawValue, target, prefix, user] + (machine.map { [$0] } ?? [])
+    }
+
     /// `machineExists`: false offers only bring-up. Callers offer nothing while a VM fails its identity checks.
     static func lifecyclePlans(_ host: HostSpec, inventory: Inventory, machineExists: Bool = true) -> [Plan] {
         let plans = allLifecyclePlans(host, inventory: inventory)
@@ -119,7 +146,10 @@ public enum PlanFactory {
             func script(_ name: String, _ arguments: [String] = []) -> PlanAction {
                 .localCommand(CommandInvocation("/usr/bin/env", ["PATH=\(path)", "./\(name)"] + arguments, workingDirectory: vm.littleCICheckout))
             }
-            return [
+            let check = PlanStep("Check that \(vm.littleCICheckout)/config.env describes this machine and fleet",
+                                 .localCommand(CommandInvocation("/bin/bash", ["-c", configurationCheck, "bash"]
+                                     + configurationArguments(vm.littleCICheckout, inventory, prefix: vm.fleetPrefix, user: vm.runnerUser, machine: vm.machine))))
+            return withCheck(check, [
                 Plan(id: "vm.up.\(host.id)", title: "Bring up \(host.name)", subject: .host(host.id),
                      effect: "Provisions OrbStack machine \(vm.machine) if needed, registers fleet \(vm.fleetPrefix), and checks it on GitHub. Uses \(vm.littleCICheckout)/config.env.",
                      steps: [PlanStep("Provision the machine", script("provision-orbstack.sh")),
@@ -136,11 +166,15 @@ public enum PlanFactory {
                      steps: [PlanStep("Uninstall the fleet and delete the machine",
                                       script("uninstall-runners-orb.sh", ["--all", "--confirm", "--delete-machine"]))],
                      preconditions: [.fleetIdle(prefix: vm.fleetPrefix)], requiresSecondConfirmation: true),
-            ]
+            ])
         case .linuxServer(let server):
             let checkout = quote(server.littleCICheckout)
             let user = quote(server.runnerUser)
-            return [
+            let check = PlanStep("Check that the server's config.env describes this fleet", .hostCommand(hostID: host.id,
+                command: "bash -c \(quote(configurationCheck)) bash "
+                    + configurationArguments(server.littleCICheckout, inventory, prefix: server.fleetPrefix, user: server.runnerUser, machine: nil)
+                        .map(quote).joined(separator: " "), token: nil))
+            return withCheck(check, [
                 Plan(id: "server.up.\(host.id)", title: "Bring up \(host.name)", subject: .host(host.id),
                      effect: "Provisions \(host.name) and registers fleet \(server.fleetPrefix) as \(server.runnerUser). Uses \(server.littleCICheckout)/config.env on the server.",
                      steps: [PlanStep("Provision the box", .hostCommand(hostID: host.id, command: "cd \(checkout) && sudo -n ./provision-box.sh", token: nil)),
@@ -155,7 +189,15 @@ public enum PlanFactory {
                                 "IFS= read -r REMOVETOKEN && export REMOVETOKEN && cd \(checkout) && sudo -n -u \(user) -H --preserve-env=REMOVETOKEN ./uninstall-runners.sh --all --confirm",
                                 token: .removal))],
                      preconditions: [.fleetIdle(prefix: server.fleetPrefix)]),
-            ]
+            ])
+        }
+    }
+
+    private static func withCheck(_ check: PlanStep, _ plans: [Plan]) -> [Plan] {
+        plans.map { plan in
+            var plan = plan
+            plan.steps.insert(check, at: 0)
+            return plan
         }
     }
 }
