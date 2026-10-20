@@ -23,6 +23,7 @@ public actor GitHubClient {
     private var pullRequestCache: (byBranch: [String: PullRequestState], fetchedAt: Date)?
     private var toolchainCache: (value: ToolchainRequirement?, fetchedAt: Date)?
     private var redMainCache: (runID: Int, jobs: [String])?
+    private var groupCache: (members: Set<String>, fetchedAt: Date)?
 
     public init(commandRunner: any CommandRunning = ProcessCommandRunner()) {
         self.commandRunner = commandRunner
@@ -38,7 +39,14 @@ public actor GitHubClient {
 
     // MARK: Snapshot
 
-    public func snapshot(for inventory: Inventory, now: Date = Date()) async throws -> GitHubSnapshot {
+    /// `fresh` skips every cache: plan execution reads pull-request state, group membership and red main again.
+    public func snapshot(for inventory: Inventory, now: Date = Date(), fresh: Bool = false) async throws -> GitHubSnapshot {
+        if fresh {
+            pullRequestCache = nil
+            toolchainCache = nil
+            redMainCache = nil
+            groupCache = nil
+        }
         let target = inventory.github
         let runners = try await allRunners(target)
         var activeRuns: [WorkflowRun] = []
@@ -48,15 +56,11 @@ public actor GitHubClient {
         activeRuns = Array(Dictionary(activeRuns.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).values)
             .sorted { $0.createdAt < $1.createdAt }
 
-        var activeJobs: [WorkflowJob] = []
-        for run in activeRuns where run.status == "in_progress" {
-            activeJobs += try await jobs(target, runID: run.id, filter: "latest")
-        }
-
         let recentMainRuns = try await runs(target, query: "branch=main&status=completed&per_page=50")
             .filter { $0.name == inventory.queue.checkWorkflow && ["success", "failure"].contains($0.conclusion) }
         let redMainJobs = try await failedJobNames(of: recentMainRuns.first, target: target)
-        return GitHubSnapshot(observedAt: now, runners: runners, activeRuns: activeRuns, activeJobs: activeJobs,
+        return GitHubSnapshot(observedAt: now, runners: runners, activeRuns: activeRuns,
+                              runnerGroupMembers: try await runnerGroupMembers(target, now: now),
                               recentMainRuns: recentMainRuns, redMainJobs: redMainJobs,
                               pullRequests: try await pullRequestsByBranch(target, now: now),
                               toolchain: try await toolchain(target, now: now))
@@ -136,6 +140,26 @@ public actor GitHubClient {
         }
         pullRequestCache = (byBranch, now)
         return byBranch
+    }
+
+    /// Runner names in the configured organization runner group; nil in repository scope.
+    private func runnerGroupMembers(_ target: GitHubTarget, now: Date) async throws -> Set<String>? {
+        guard target.scope == .organization, let groupName = target.runnerGroup else { return nil }
+        if let groupCache, now.timeIntervalSince(groupCache.fetchedAt) < 300 { return groupCache.members }
+        struct Groups: Decodable { struct Group: Decodable { var id: Int; var name: String }; var runnerGroups: [Group] }
+        struct Page: Decodable { var totalCount: Int; var runners: [GitHubRunner] }
+        let groups: Groups = try await get("orgs/\(target.owner)/actions/runner-groups?per_page=100")
+        guard let group = groups.runnerGroups.first(where: { $0.name == groupName }) else {
+            throw ClientError.http(status: 404, path: "orgs/\(target.owner)/actions/runner-groups", message: "no runner group named \(groupName)")
+        }
+        var members: Set<String> = []
+        for page in 1... {
+            let body: Page = try await get("orgs/\(target.owner)/actions/runner-groups/\(group.id)/runners?per_page=100&page=\(page)")
+            members.formUnion(body.runners.map(\.name))
+            if body.runners.count < 100 || members.count >= body.totalCount { break }
+        }
+        groupCache = (members, now)
+        return members
     }
 
     /// Bun from package.json's packageManager, Node from engines.node, on the default branch.

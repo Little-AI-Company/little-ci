@@ -81,6 +81,8 @@ struct CodexReviewTests {
         #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[2].id])
         runs[1].updatedAt = Fixture.now  // a rerun updated it
         #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[1].id, runs[2].id])
+        runs[2].conclusion = "skipped"
+        #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[1].id], "skipped runs never took a runner")
     }
 
     @Test("A timed-out command that ignores SIGTERM is killed before the step reports")
@@ -263,5 +265,26 @@ struct CodexReviewTests {
         let assessment = assess(github: snapshot, hosts: [:])
         #expect(assessment.plan("unregister.ci-m1-check-7") == nil)
         #expect(assessment.plan("unregister.ci-m1-check-8") != nil)
+    }
+
+    @Test("In organization scope a declared runner outside the configured runner group does not count")
+    func organizationGroupMembership() {
+        var inventory = Fixture.inventory
+        inventory.github = GitHubTarget(scope: .organization, owner: "example-owner", repository: "example-repo", runnerGroup: "private-ci")
+        var snapshot = Fixture.snapshot(online: Fixture.m1CheckRunners)
+        snapshot.runnerGroupMembers = ["ci-m1-check-1", "ci-m1-check-2"]
+        #expect(inventory.checkRunners(in: snapshot).map(\.name).sorted() == ["ci-m1-check-1", "ci-m1-check-2"])
+        snapshot.runnerGroupMembers = nil
+        #expect(inventory.checkRunners(in: snapshot).isEmpty, "unknown membership counts as outside the group")
+    }
+
+    @Test("Processed runs survive a restart through the ledger file")
+    func processedRunsPersist() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("little-ci-ledger-\(UUID().uuidString).jsonl")
+        defer { try? FileManager.default.removeItem(at: file) }
+        let job = Fixture.decode(WorkflowJob.self, "logs/docker-down.job.json")
+        try await JobLedger(url: file).record([LedgerEntry(job: job, workflow: "CI", failure: nil, runUpdatedAt: Fixture.now)])
+        let reopened = await JobLedger(url: file).processedRuns()
+        #expect(reopened[job.runId] == .some(Fixture.now))
     }
 }

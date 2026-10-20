@@ -465,11 +465,14 @@ public enum Assessor {
 }
 
 extension Inventory {
-    /// GitHub runners that belong to this fleet: an exact declared name that carries every declared label.
-    /// In organization scope GitHub lists every fleet's runners; only these count.
+    /// GitHub runners that belong to this fleet: an exact declared name that carries every declared label and,
+    /// in organization scope, sits in the configured runner group (unknown membership counts as outside it).
     func declaredRunners(in github: GitHubSnapshot) -> [GitHubRunner] {
         let declared = Dictionary(hosts.flatMap { host in host.runners.map { ($0.name, Set($0.labels)) } }, uniquingKeysWith: { first, _ in first })
-        return github.runners.filter { runner in declared[runner.name]?.isSubset(of: runner.labelNames) ?? false }
+        return github.runners.filter { runner in
+            guard declared[runner.name]?.isSubset(of: runner.labelNames) == true else { return false }
+            return self.github.scope == .repository || github.runnerGroupMembers?.contains(runner.name) == true
+        }
     }
 
     /// This fleet's runners that serve the check pool.

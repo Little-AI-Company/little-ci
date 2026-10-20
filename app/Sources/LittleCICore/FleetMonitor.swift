@@ -55,7 +55,8 @@ public actor FleetMonitor {
     private var lastPowerLog: [String: Date] = [:]
     private var ledgerSummary = LedgerSummary.empty
     /// Completed runs already in the ledger, by run ID, at the update time they were read.
-    private var ledgeredRuns: [Int: Date?] = [:]
+    private var ledgeredRuns: [Int: Date?]?
+    static let ledgerWindow: TimeInterval = 7 * 86_400
     private var assessment: Assessment?
     private var lastOutcome: PlanOutcome?
     private var loops: [Task<Void, Never>] = []
@@ -193,8 +194,18 @@ public actor FleetMonitor {
     private func updateLedger() async {
         let target = inventory.github
         do {
-            let runs = try await github.runs(target, query: "status=completed&per_page=50")
-            for run in Self.runsNeedingJobs(runs, ledgered: ledgeredRuns) {
+            var known: [Int: Date?]
+            if let ledgeredRuns { known = ledgeredRuns } else { known = await ledger.processedRuns() }
+            // Every completed run in the reporting window, newest first, so a busy hour or a stopped app leaves no gap.
+            let since = Date().addingTimeInterval(-Self.ledgerWindow).formatted(.iso8601.year().month().day())
+            var runs: [WorkflowRun] = []
+            for page in 1...10 {
+                let batch = try await github.runs(target, query: "status=completed&created=%3E%3D\(since)&exclude_pull_requests=true&per_page=100&page=\(page)")
+                runs += batch
+                // Stop at the end, or at a page with nothing new: after the first backfill a minute costs one page.
+                if batch.count < 100 || Self.runsNeedingJobs(batch, ledgered: known).isEmpty { break }
+            }
+            for run in Self.runsNeedingJobs(runs, ledgered: known) {
                 let jobs = try await github.jobs(target, runID: run.id, filter: "all")
                 var entries: [LedgerEntry] = []
                 for job in Self.fleetJobs(jobs, inventory: inventory) {
@@ -205,11 +216,13 @@ public actor FleetMonitor {
                         let annotations = (try? await github.jobAnnotations(target, jobID: job.id)) ?? []
                         failure = FailureClassifier.classify(job, log: log, annotations: annotations, context: context(for: job, among: jobs))
                     }
-                    entries.append(LedgerEntry(job: job, workflow: run.name, failure: failure))
+                    entries.append(LedgerEntry(job: job, workflow: run.name, failure: failure, runUpdatedAt: run.updatedAt))
                 }
                 try await ledger.record(entries)
-                ledgeredRuns[run.id] = run.updatedAt
+                known[run.id] = run.updatedAt
+                ledgeredRuns = known
             }
+            ledgeredRuns = known
             ledgerSummary = await ledger.summary(since: Date().addingTimeInterval(-7 * 86_400), checkLabel: inventory.queue.checkLabel)
         } catch {
             githubError = "job ledger: \(error)"
@@ -224,8 +237,10 @@ public actor FleetMonitor {
     }
 
     /// A rerun updates its run, so a run is read again only when its update time changed.
+    /// Skipped runs never took a runner, so they are not read at all.
     static func runsNeedingJobs(_ runs: [WorkflowRun], ledgered: [Int: Date?]) -> [WorkflowRun] {
         runs.filter { run in
+            guard run.conclusion != "skipped" else { return false }
             guard let seen = ledgered[run.id] else { return true }
             return seen != run.updatedAt
         }

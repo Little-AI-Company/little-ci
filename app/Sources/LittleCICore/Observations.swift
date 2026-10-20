@@ -113,8 +113,8 @@ public struct GitHubSnapshot: Codable, Sendable, Equatable {
     public var runners: [GitHubRunner]
     /// Runs that are queued, waiting or in progress.
     public var activeRuns: [WorkflowRun]
-    /// Jobs of the active runs.
-    public var activeJobs: [WorkflowJob]
+    /// Organization scope: runners in the configured runner group. Nil in repository scope.
+    public var runnerGroupMembers: Set<String>?
     /// The newest runs of the check workflow on main that passed or failed (cancelled runs say nothing), newest first.
     public var recentMainRuns: [WorkflowRun]
     /// Failed jobs of the newest completed main run.
@@ -123,13 +123,13 @@ public struct GitHubSnapshot: Codable, Sendable, Equatable {
     public var pullRequests: [String: PullRequestState]
     public var toolchain: ToolchainRequirement?
 
-    public init(observedAt: Date, runners: [GitHubRunner], activeRuns: [WorkflowRun] = [], activeJobs: [WorkflowJob] = [],
+    public init(observedAt: Date, runners: [GitHubRunner], activeRuns: [WorkflowRun] = [], runnerGroupMembers: Set<String>? = nil,
                 recentMainRuns: [WorkflowRun] = [], redMainJobs: [String] = [], pullRequests: [String: PullRequestState] = [:],
                 toolchain: ToolchainRequirement? = nil) {
         self.observedAt = observedAt
         self.runners = runners
         self.activeRuns = activeRuns
-        self.activeJobs = activeJobs
+        self.runnerGroupMembers = runnerGroupMembers
         self.recentMainRuns = recentMainRuns
         self.redMainJobs = redMainJobs
         self.pullRequests = pullRequests

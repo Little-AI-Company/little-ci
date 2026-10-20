@@ -15,7 +15,7 @@ actor ShiftingGitHub: GitHubAccess {
         self.fromRead = fromRead
     }
 
-    func snapshot(for inventory: Inventory, now: Date) async throws -> GitHubSnapshot { snapshotValue }
+    func snapshot(for inventory: Inventory, now: Date, fresh: Bool) async throws -> GitHubSnapshot { snapshotValue }
     func allRunners(_ target: GitHubTarget) async throws -> [GitHubRunner] {
         reads += 1
         return snapshotValue.runners.map { runner in

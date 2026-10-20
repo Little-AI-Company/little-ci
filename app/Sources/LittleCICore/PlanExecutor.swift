@@ -44,7 +44,8 @@ public struct PlanOutcome: Codable, Sendable, Equatable {
 
 /// The GitHub reads and writes a plan needs. `GitHubClient` is the real one; tests replace it.
 public protocol GitHubAccess: Sendable {
-    func snapshot(for inventory: Inventory, now: Date) async throws -> GitHubSnapshot
+    /// `fresh: true` bypasses every cache, for reads right before a plan runs.
+    func snapshot(for inventory: Inventory, now: Date, fresh: Bool) async throws -> GitHubSnapshot
     func allRunners(_ target: GitHubTarget) async throws -> [GitHubRunner]
     func registrationToken(_ target: GitHubTarget) async throws -> String
     func removalToken(_ target: GitHubTarget) async throws -> String
@@ -81,7 +82,7 @@ public actor PlanExecutor {
         // Read GitHub and every host the plan touches again, and derive the plan again from those reads.
         var fresh = observations
         do {
-            fresh.github = try await github.snapshot(for: observations.inventory, now: now)
+            fresh.github = try await github.snapshot(for: observations.inventory, now: now, fresh: true)
             fresh.githubError = nil
         } catch {
             return refuse(["GitHub could not be read: \(error)"])

@@ -5,11 +5,14 @@ public struct LedgerEntry: Codable, Sendable, Equatable {
     public var job: WorkflowJob
     public var workflow: String
     public var failure: FailureClass?
+    /// The run's update time when its jobs were read; a later update (a rerun) reads them again.
+    public var runUpdatedAt: Date?
 
-    public init(job: WorkflowJob, workflow: String, failure: FailureClass?) {
+    public init(job: WorkflowJob, workflow: String, failure: FailureClass?, runUpdatedAt: Date? = nil) {
         self.job = job
         self.workflow = workflow
         self.failure = failure
+        self.runUpdatedAt = runUpdatedAt
     }
 }
 
@@ -43,6 +46,16 @@ public actor JobLedger {
     }
 
     public func contains(jobID: Int) -> Bool { entries[jobID] != nil }
+
+    /// Runs whose jobs are recorded, at the update time they were read.
+    public func processedRuns() -> [Int: Date?] {
+        var runs: [Int: Date?] = [:]
+        for entry in entries.values {
+            let previous = runs[entry.job.runId] ?? nil
+            runs[entry.job.runId] = [previous, entry.runUpdatedAt].compactMap { $0 }.max()
+        }
+        return runs
+    }
 
     public func record(_ newEntries: [LedgerEntry]) throws {
         let fresh = newEntries.filter { entries[$0.job.id] == nil }

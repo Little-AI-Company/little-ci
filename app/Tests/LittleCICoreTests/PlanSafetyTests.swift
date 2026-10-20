@@ -10,7 +10,11 @@ actor FakeGitHub: GitHubAccess {
     init(_ snapshot: GitHubSnapshot) { current = snapshot }
 
     func set(_ snapshot: GitHubSnapshot) { current = snapshot }
-    func snapshot(for inventory: Inventory, now: Date) async throws -> GitHubSnapshot { current }
+    var freshReads = 0
+    func snapshot(for inventory: Inventory, now: Date, fresh: Bool) async throws -> GitHubSnapshot {
+        if fresh { freshReads += 1 }
+        return current
+    }
     func allRunners(_ target: GitHubTarget) async throws -> [GitHubRunner] { current.runners }
     func registrationToken(_ target: GitHubTarget) async throws -> String { token }
     func removalToken(_ target: GitHubTarget) async throws -> String { token }
@@ -116,6 +120,7 @@ struct PlanSafetyTests {
         let outcome = await executor(github, runner).execute(PlanReview(plan: plan, reviewedAt: Fixture.now),
                                                              observations: observations(snapshot), now: Fixture.now)
         #expect(outcome.succeeded)
+        #expect(await github.freshReads == 1, "the read before running skips every cache")
         let token = github.token
         #expect(runner.calls.count == 3)
         #expect(runner.calls.allSatisfy { !$0.invocation.arguments.joined().contains(token) })
