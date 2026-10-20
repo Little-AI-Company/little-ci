@@ -70,7 +70,8 @@ public enum DemoFleet {
             remote(7, "demo-old-4", online: false, busy: false),
         ]
         func run(_ id: Int, branch: String, minutesAgo: Double, status: String = "queued", event: String = "pull_request") -> WorkflowRun {
-            WorkflowRun(id: id, name: "CI", event: event, status: status, conclusion: nil, headBranch: branch, headSha: String(repeating: "a", count: 40),
+            WorkflowRun(id: id, name: "CI", event: event, status: status, conclusion: nil, headBranch: branch,
+                        headRepository: .init(fullName: "acme/widgets"), headSha: String(repeating: "a", count: 40),
                         displayTitle: "Change on \(branch)", createdAt: now.addingTimeInterval(-minutesAgo * 60), runStartedAt: nil,
                         runAttempt: 1, updatedAt: nil, pullRequests: [], htmlUrl: "https://github.com/acme/widgets/actions/runs/\(id)")
         }

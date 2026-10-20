@@ -223,6 +223,9 @@ public enum Assessor {
                 if config.isolated != true { problems.append("isolated is not true") }
                 if config.isolateNetwork != true { problems.append("isolate_network is not true") }
                 if config.forwardSSHAgent != false { problems.append("forward_ssh_agent is not false") }
+                if config.defaultUsername != vm.runnerUser {
+                    problems.append("default user is \(config.defaultUsername ?? "unset"), expected \(vm.runnerUser)")
+                }
             } else {
                 problems.append("orbctl info returned no readable config")
             }
@@ -403,7 +406,8 @@ public enum Assessor {
                 var dispositions: [QueueEntry.Disposition] = []
                 let lane = QueueLane.of(run, policy: inventory.queue)
                 if run.event == "pull_request", lane != .main,
-                   runs.contains(where: { $0.id != run.id && $0.name == run.name && $0.headBranch == run.headBranch && $0.createdAt > run.createdAt }) {
+                   runs.contains(where: { $0.id != run.id && $0.name == run.name && $0.headBranch == run.headBranch
+                       && $0.headRepository == run.headRepository && $0.createdAt > run.createdAt }) {
                     dispositions.append(.superseded)
                 }
                 if run.event == "pull_request", let branch = run.headBranch, github.pullRequests[branch]?.isOpen == false {

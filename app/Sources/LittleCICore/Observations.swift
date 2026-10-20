@@ -18,6 +18,7 @@ public struct GitHubRunner: Codable, Sendable, Equatable, Identifiable {
 
 public struct WorkflowRun: Codable, Sendable, Equatable, Identifiable {
     public struct PullRequestReference: Codable, Sendable, Equatable { public var number: Int }
+    public struct Repository: Codable, Sendable, Equatable { public var fullName: String }
 
     public var id: Int
     public var name: String
@@ -25,6 +26,8 @@ public struct WorkflowRun: Codable, Sendable, Equatable, Identifiable {
     public var status: String
     public var conclusion: String?
     public var headBranch: String?
+    /// The repository the head branch lives in: a fork's name differs from the base repository's.
+    public var headRepository: Repository?
     public var headSha: String
     public var displayTitle: String
     public var createdAt: Date

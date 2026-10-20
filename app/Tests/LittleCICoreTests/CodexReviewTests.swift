@@ -96,4 +96,57 @@ struct CodexReviewTests {
         #expect(kill(pid, 0) != 0, "the shell that ignored SIGTERM is gone")
         try? FileManager.default.removeItem(at: marker)
     }
+
+    @Test("Runs on the same branch name from different forks are not superseded")
+    func forkBranchesAreDistinct() {
+        func run(_ id: Int, _ repository: String, minutesAgo: Double) -> WorkflowRun {
+            WorkflowRun(id: id, name: "CI", event: "pull_request", status: "queued", conclusion: nil, headBranch: "fix/login",
+                        headRepository: .init(fullName: repository), headSha: String(repeating: "b", count: 40), displayTitle: "fix",
+                        createdAt: Fixture.now.addingTimeInterval(-minutesAgo * 60), runStartedAt: nil, runAttempt: 1, updatedAt: nil,
+                        pullRequests: [], htmlUrl: "https://github.com/example-owner/example-repo/actions/runs/\(id)")
+        }
+        var snapshot = Fixture.snapshot(online: [])
+        snapshot.activeRuns = [run(1, "fork-a/example-repo", minutesAgo: 30), run(2, "fork-b/example-repo", minutesAgo: 5),
+                               run(3, "fork-a/example-repo", minutesAgo: 2)]
+        let queue = assess(github: snapshot, hosts: [:]).queue
+        #expect(queue.first { $0.id == 1 }?.dispositions.contains(.superseded) == true, "fork-a's newer run supersedes it")
+        #expect(queue.first { $0.id == 2 }?.dispositions.contains(.superseded) == false, "fork-b has no newer run")
+    }
+
+    @Test("The ledger keeps only jobs that ran on this fleet's runners")
+    func ledgerKeepsFleetJobs() {
+        var ours = Fixture.decode(WorkflowJob.self, "logs/docker-down.job.json")
+        var hosted = ours
+        hosted.id += 1
+        hosted.runnerName = "GitHub Actions 1000007139"
+        ours.runnerName = "ci-m1-check-2"
+        #expect(FleetMonitor.fleetJobs([ours, hosted], inventory: Fixture.inventory).map(\.id) == [ours.id])
+    }
+
+    @Test("The API summary counts only this fleet's runners")
+    func apiSummaryIsFleetScoped() {
+        var snapshot = Fixture.snapshot(online: ["ci-m4-check-1"])
+        snapshot.runners.append(GitHubRunner(id: 990, name: "other-fleet-1", status: .online, busy: true,
+                                             labels: [.init(name: "self-hosted")]))
+        let observations = FleetObservations(inventory: Fixture.inventory, github: snapshot, hosts: [:])
+        let state = FleetState(source: .live, observations: observations, assessment: Assessor.assess(observations, now: Fixture.now),
+                               events: [], lastOutcome: nil, settings: AppSettings())
+        let summary = APIRouter.summary(state)
+        #expect(summary.runnersOnline == 1)
+        #expect(summary.runnersBusy == 0)
+    }
+
+    @Test("A VM whose default user is not the runner user does not match")
+    func defaultUserMustMatch() {
+        var (inventory, observation) = vmObservation(identity: Self.identity)
+        if case .reached(var facts) = observation.outcome {
+            facts.virtualMachine?.info?.record.config?.defaultUsername = "admin"
+            observation.outcome = .reached(facts)
+        }
+        inventory.queue = Fixture.inventory.queue
+        let assessment = Assessor.assess(FleetObservations(inventory: inventory, github: Fixture.snapshot(online: []), hosts: ["vm": observation]),
+                                         now: Fixture.now)
+        #expect(assessment.finding("vm.vm.identity")?.evidence.contains("default user is admin, expected deploy") == true)
+        #expect(assessment.plans.filter { $0.subject == .host("vm") }.isEmpty)
+    }
 }

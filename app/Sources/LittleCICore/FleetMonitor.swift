@@ -197,7 +197,7 @@ public actor FleetMonitor {
             for run in Self.runsNeedingJobs(runs, ledgered: ledgeredRuns) {
                 let jobs = try await github.jobs(target, runID: run.id, filter: "all")
                 var entries: [LedgerEntry] = []
-                for job in jobs where job.tookRunner && job.conclusion != nil {
+                for job in Self.fleetJobs(jobs, inventory: inventory) {
                     guard await !ledger.contains(jobID: job.id) else { continue }
                     var failure: FailureClass?
                     if job.conclusion == "failure" {
@@ -214,6 +214,12 @@ public actor FleetMonitor {
             githubError = "job ledger: \(error)"
         }
         await assessAndPublish()
+    }
+
+    /// Finished jobs that ran on one of this fleet's declared runners. Hosted runners and other
+    /// fleets would skew the failure shares and queue waits.
+    static func fleetJobs(_ jobs: [WorkflowJob], inventory: Inventory) -> [WorkflowJob] {
+        jobs.filter { $0.tookRunner && $0.conclusion != nil && $0.runnerName.flatMap(inventory.host(ofRunner:)) != nil }
     }
 
     /// A rerun updates its run, so a run is read again only when its update time changed.

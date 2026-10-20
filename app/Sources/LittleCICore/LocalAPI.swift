@@ -103,13 +103,14 @@ public enum APIRouter {
     static func summary(_ state: FleetState) -> APISummary {
         let assessment = state.assessment
         let github = state.observations.github
+        let fleet = github.map(state.observations.inventory.declaredRunners(in:)) ?? []
         return APISummary(
             worstSeverity: assessment.worstSeverity,
             findings: Dictionary(grouping: assessment.findings, by: { "\($0.severity)" }).mapValues(\.count),
             hosts: state.observations.inventory.hosts.count,
             hostsReachable: state.observations.hosts.values.filter { $0.facts != nil }.count,
-            runnersOnline: github?.runners.filter { $0.status == .online }.count ?? 0,
-            runnersBusy: github?.runners.filter(\.busy).count ?? 0,
+            runnersOnline: fleet.filter { $0.status == .online }.count,
+            runnersBusy: fleet.filter(\.busy).count,
             activeRuns: github?.activeRuns.count ?? 0,
             githubObservedAt: github?.observedAt,
             serviceLevels: assessment.serviceLevels)
