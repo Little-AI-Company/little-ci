@@ -1,0 +1,91 @@
+name: Bug report
+description: Something broke while provisioning, installing, checking, or removing runners.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first and keep the report to one problem.
+        Never paste a registration token, PAT, `config.env` secret, `.runner`, or `.credentials` file.
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options:
+        - OrbStack on an Apple Silicon Mac
+        - Generic Ubuntu server (Hetzner or similar)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: command
+    attributes:
+      label: Command
+      options:
+        - provision-orbstack.sh
+        - install-runners-orb.sh
+        - check-runners.sh
+        - doctor.sh
+        - uninstall-runners-orb.sh
+        - provision-box.sh
+        - install-runners.sh
+        - uninstall-runners.sh
+        - provision-postgres.sh
+        - provision-job-dependencies.sh
+        - A workflow job running on the fleet
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The commands you ran, in order. Include the relevant `config.env` settings with secrets removed.
+      placeholder: |
+        GITHUB_SCOPE="repository"
+        FLEET_ID="mac-studio"
+        ./provision-orbstack.sh
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Paste the error output. Redact tokens and private repository names.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Little-CI commit
+      description: Output of `git rev-parse --short HEAD`.
+      placeholder: 1774f66
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS version, OrbStack version (`orbctl version`), and Bash version.
+      placeholder: macOS 27.0, OrbStack 2.2.4, Bash 5.3
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: doctor.sh output
+      description: On a Mac, `./doctor.sh` is read-only and usually shows the cause. Redact private names.
+      render: shell
