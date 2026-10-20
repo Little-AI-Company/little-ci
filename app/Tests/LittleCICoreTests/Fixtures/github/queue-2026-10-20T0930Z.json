@@ -1,0 +1,198 @@
+{
+ "note": "CI runs created before 2026-10-20 0930Z and updated after it, rebuilt from the backfill; status is what it was then (in_progress once a job had started). PR states are as of that time.",
+ "moment": "2026-10-20T09:30:00Z",
+ "activeRuns": [
+  {
+   "id": 39399472041,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "queued",
+   "conclusion": null,
+   "head_branch": "platform-branch-45",
+   "head_sha": "e18f3620c8efe5bc0f3d1f24667a196b21bab49f",
+   "created_at": "2026-10-20T09:16:26Z",
+   "run_started_at": "2026-10-20T09:16:26Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39399472041",
+   "display_title": "Change on platform-branch-45",
+   "pull_requests": [
+    {
+     "number": 3124
+    }
+   ]
+  },
+  {
+   "id": 39398619033,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "platform-branch-46",
+   "head_sha": "55b44ca3f5112a1afb458f2f0651ce4133e84595",
+   "created_at": "2026-10-20T09:09:27Z",
+   "run_started_at": "2026-10-20T09:09:27Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39398619033",
+   "display_title": "Change on platform-branch-46",
+   "pull_requests": [
+    {
+     "number": 3123
+    }
+   ]
+  },
+  {
+   "id": 39397195824,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "platform-branch-5",
+   "head_sha": "2ed632facd53e869652b9a2afbd954be79033d68",
+   "created_at": "2026-10-20T08:57:49Z",
+   "run_started_at": "2026-10-20T11:12:51Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39397195824",
+   "display_title": "Change on platform-branch-5",
+   "pull_requests": [
+    {
+     "number": 3119
+    }
+   ]
+  },
+  {
+   "id": 39394254324,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "parity-branch-47",
+   "head_sha": "d9c05d4e39cef6da068acff5c92463083359c3f0",
+   "created_at": "2026-10-20T08:33:26Z",
+   "run_started_at": "2026-10-20T10:11:40Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39394254324",
+   "display_title": "Change on parity-branch-47",
+   "pull_requests": [
+    {
+     "number": 3122
+    }
+   ]
+  },
+  {
+   "id": 39394172370,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "platform-branch-48",
+   "head_sha": "de5cae2d9efac92e0986b8eee329e9aee429a631",
+   "created_at": "2026-10-20T08:32:45Z",
+   "run_started_at": "2026-10-20T08:32:45Z",
+   "run_attempt": 1,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39394172370",
+   "display_title": "Change on platform-branch-48",
+   "pull_requests": []
+  },
+  {
+   "id": 39392472565,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "platform-branch-49",
+   "head_sha": "c67f8bc784aa3bfb28dbb8ddb77081b0f95df3b0",
+   "created_at": "2026-10-20T08:18:40Z",
+   "run_started_at": "2026-10-20T10:11:56Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39392472565",
+   "display_title": "Change on platform-branch-49",
+   "pull_requests": []
+  },
+  {
+   "id": 39374130485,
+   "name": "CI",
+   "event": "pull_request",
+   "status": "in_progress",
+   "conclusion": null,
+   "head_branch": "feature/branch-50",
+   "head_sha": "390d0b6b00504a7c0b899c3d02942070483a0d88",
+   "created_at": "2026-10-20T05:17:50Z",
+   "run_started_at": "2026-10-20T15:32:34Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39374130485",
+   "display_title": "Change on feature/branch-50",
+   "pull_requests": [
+    {
+     "number": 3114
+    }
+   ]
+  }
+ ],
+ "recentMainRuns": [
+  {
+   "id": 39381524845,
+   "name": "CI",
+   "event": "push",
+   "status": "completed",
+   "conclusion": "failure",
+   "head_branch": "main",
+   "head_sha": "8d80195a869994493ce8b402e98b0fbd5db945ee",
+   "created_at": "2026-10-20T06:38:08Z",
+   "run_started_at": "2026-10-20T06:50:17Z",
+   "run_attempt": 2,
+   "html_url": "https://github.com/example-owner/example-repo/actions/runs/39381524845",
+   "display_title": "Change on main",
+   "pull_requests": []
+  }
+ ],
+ "redMainJobs": [
+  "Database suite 2",
+  "Database suite 3",
+  "Test 1",
+  "Test 2"
+ ],
+ "pullRequests": {
+  "platform-branch-46": {
+   "number": 3123,
+   "state": "open",
+   "merged": false,
+   "headBranch": "platform-branch-46"
+  },
+  "feature/branch-50": {
+   "number": 3114,
+   "state": "open",
+   "merged": false,
+   "headBranch": "feature/branch-50"
+  },
+  "platform-branch-48": {
+   "number": 3117,
+   "state": "open",
+   "merged": false,
+   "headBranch": "platform-branch-48"
+  },
+  "platform-branch-5": {
+   "number": 3119,
+   "state": "open",
+   "merged": false,
+   "headBranch": "platform-branch-5"
+  },
+  "platform-branch-49": {
+   "number": 3121,
+   "state": "open",
+   "merged": false,
+   "headBranch": "platform-branch-49"
+  },
+  "parity-branch-47": {
+   "number": 3122,
+   "state": "open",
+   "merged": false,
+   "headBranch": "parity-branch-47"
+  },
+  "platform-branch-45": {
+   "number": 3124,
+   "state": "open",
+   "merged": false,
+   "headBranch": "platform-branch-45"
+  }
+ }
+}

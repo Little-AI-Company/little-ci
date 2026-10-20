@@ -1,0 +1,1115 @@
+{
+  "version": 1,
+  "reviewId": "2026-10-20-menu-bar-app",
+  "title": "Menu bar app design crit",
+  "original": {
+    "recordedAt": "2026-10-20T17:39:52Z",
+    "code": {
+      "kind": "committed",
+      "baseCommit": "0ec87417eb430f936130a4ffd302c1c03efaab56",
+      "commits": []
+    },
+    "actors": {
+      "reviewer": {
+        "kind": "agent",
+        "name": "crit reviewer",
+        "provider": "Anthropic",
+        "model": "claude-opus-5-5",
+        "harness": "Claude Code (Agent SDK subagent)"
+      },
+      "executor": null,
+      "verifier": null
+    },
+    "captures": {
+      "phase": "before",
+      "data": "demo",
+      "manifestSha256": "152f0ff60be90a57a90e7c284079e7a0470a4bb5084a288c005be9ae4a2844db",
+      "files": [
+        {
+          "file": "overview-light.png",
+          "surface": "overview",
+          "appearance": "light",
+          "sha256": "549637546dbbe622188b8508ae5d292c1d23d644a7c8f3df6c4e21c9bff80138"
+        },
+        {
+          "file": "panel-light.png",
+          "surface": "panel",
+          "appearance": "light",
+          "sha256": "2ebdadb559eb6096d5099838ae4b0840664b4ad1dd5ac7cab67354c2a6d1aced"
+        },
+        {
+          "file": "hosts-light.png",
+          "surface": "hosts",
+          "appearance": "light",
+          "sha256": "ef5492fc74ac01293163b4db47f9b26c20635a5a60386faa64f7df7ae117e190"
+        },
+        {
+          "file": "runners-light.png",
+          "surface": "runners",
+          "appearance": "light",
+          "sha256": "f30c51962c10c94093d5c6bb2f118685a08cb02b91001a38c560cea1235884c9"
+        },
+        {
+          "file": "queue-light.png",
+          "surface": "queue",
+          "appearance": "light",
+          "sha256": "6b6c9000ddd5d87082052a5314f5f16870e06ef97df99bfd9a51277dd841ca4f"
+        },
+        {
+          "file": "events-light.png",
+          "surface": "events",
+          "appearance": "light",
+          "sha256": "7eae2478288c6d86ea4c0f3d484534049aaf75a8be998bf514d32774487ed063"
+        },
+        {
+          "file": "overview-dark.png",
+          "surface": "overview",
+          "appearance": "dark",
+          "sha256": "aadcaf42da2cc1df50f5b345ad538554e8acb1d697ef3adf180ae75f47778557"
+        },
+        {
+          "file": "panel-dark.png",
+          "surface": "panel",
+          "appearance": "dark",
+          "sha256": "28e9f535eeb0ec9354ec1644938a97a0be7b3491b8a6d88deab849a273aceb5a"
+        },
+        {
+          "file": "hosts-dark.png",
+          "surface": "hosts",
+          "appearance": "dark",
+          "sha256": "4663c7d36dad5653b103b21034b43f0f1c66973c56d04ab47c8707f4b065d734"
+        },
+        {
+          "file": "runners-dark.png",
+          "surface": "runners",
+          "appearance": "dark",
+          "sha256": "76424039340257f6f9a4ebe503dae3956082d402efd30e3782efed42bb3c3531"
+        },
+        {
+          "file": "queue-dark.png",
+          "surface": "queue",
+          "appearance": "dark",
+          "sha256": "bb48c8decea620b82cc138dc3fcd70cd090cbc595a62a3342853af29527ad1f2"
+        },
+        {
+          "file": "events-dark.png",
+          "surface": "events",
+          "appearance": "dark",
+          "sha256": "cfe6d8bda13965ed39a13770996c1b91d06abda764f5d9ab070008cdbc027111"
+        }
+      ]
+    },
+    "findings": [
+      {
+        "id": "APP-01",
+        "surface": "queue",
+        "appearance": "light",
+        "screenshot": "queue-light.png",
+        "marker": {
+          "x": 32,
+          "y": 20
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.8",
+          "diagnostic.5"
+        ],
+        "higRequirement": "project.motion.no-continuous-repaint",
+        "severity": 3,
+        "confidence": "observed",
+        "doctrine": "Text(date, style: .relative), .timer, and .offset styles, which re-render on their own schedule.",
+        "claim": "Four timestamps use Text(date, style: .relative) and repaint every second (queue age '3 min, 2 sec ago' DetailsWindow.swift:244, host 'observed 2 sec ago' DetailsWindow.swift:142, panel 'GitHub 2 sec ago' MenuBarViews.swift:58, plan review expiry DetailsWindow.swift:305).",
+        "expectedFix": "Format each date as a String inside body, for example date.formatted(.relative(presentation: .numeric, unitsStyle: .abbreviated)), so it changes only when the store publishes new state; show the plan expiry as an absolute time (reviewedAt + lifetime, formatted .dateTime.hour().minute())."
+      },
+      {
+        "id": "APP-02",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 45,
+          "y": 69
+        },
+        "source": "hig",
+        "higRequirement": "project.motion.no-continuous-repaint",
+        "severity": 2,
+        "confidence": "needs device test",
+        "doctrine": "Indefinite ProgressView() (spinner or bar). Show static state text or a static symbol.",
+        "claim": "The plan review window (opened by plan buttons like this one) shows an indefinite ProgressView spinner while a plan runs (DetailsWindow.swift:313); source only, untested at runtime because demo mode disables plans.",
+        "expectedFix": "Replace ProgressView() with static text, for example Label(\"Running\", systemImage: \"hourglass\"), shown while store.runningPlanID == plan.id."
+      },
+      {
+        "id": "APP-03",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 10,
+          "y": 10
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.1",
+          "diagnostic.5"
+        ],
+        "higRequirement": "project.menu-bar.worst-finding-glyph",
+        "severity": 3,
+        "confidence": "needs device test",
+        "claim": "With zero findings the menu bar glyph falls through to circle.dotted, the same symbol as 'not loaded yet', and its accessibility label is only 'Little CI', so a healthy fleet looks and reads like an app that never loaded (MenuBarViews.swift:37-43; Assessment.worstSeverity is nil when findings are empty).",
+        "expectedFix": "Choose the symbol from store.state first: no state gives circle.dotted (or questionmark.circle with a setup problem), a loaded state with no findings gives checkmark.circle; set the label to name that state, for example 'Little CI: all clear', 'Little CI: 4 critical findings', 'Little CI: reading'."
+      },
+      {
+        "id": "APP-04",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 29,
+          "y": 50
+        },
+        "source": "hig",
+        "higRequirement": "accessibility.target.macos",
+        "severity": 2,
+        "confidence": "measured",
+        "measurement": "panel-plan-button: fail, 152.5 x 16 pt, minimum 20 x 20 pt (apple-target-macos); runners-plan-button: fail, 131.5 x 16 pt",
+        "claim": "Plan buttons use .controlSize(.small) and measure 16 pt tall, below the 20 pt macOS minimum, in the panel and in every pane (MenuBarViews.swift:141, DetailsWindow.swift:107, DetailsWindow.swift:209).",
+        "expectedFix": "Remove .controlSize(.small) from the three plan-button HStacks so they use the regular 20 pt control size."
+      },
+      {
+        "id": "APP-05",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 18,
+          "y": 44
+        },
+        "source": "hig",
+        "higRequirement": "accessibility.voiceover.labels",
+        "severity": 2,
+        "confidence": "needs device test",
+        "claim": "Severity and service-level symbols carry state but have no accessibility label, so VoiceOver hears a symbol name or nothing instead of 'critical', 'warning', 'met' or 'missed' (MenuBarViews.swift:110, MenuBarViews.swift:129, DetailsWindow.swift:274).",
+        "expectedFix": "Add .accessibilityLabel(finding.severity.rawValue) to the FindingRow and Events severity images, and .accessibilityLabel(level.met == nil ? \"not measured\" : level.met! ? \"met\" : \"missed\") to the ServiceLevelGrid image; verify with VoiceOver."
+      },
+      {
+        "id": "APP-06",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 31,
+          "y": 11
+        },
+        "source": "hig",
+        "higRequirement": "accessibility.contrast.large-text",
+        "severity": 2,
+        "confidence": "measured",
+        "measurement": "details-demo-banner-light: fail, 2.0:1, minimum 3.0:1 (apple-contrast-text-large); panel-demo-label-light: fail, 2.01:1",
+        "claim": "The orange demo label is 2.0:1 in light appearance, below 3:1 for bold text, in the Details banner (DetailsWindow.swift:30) and the panel 'DEMO DATA' label (MenuBarViews.swift:55); orange also already means 'warning' elsewhere.",
+        "expectedFix": "Drop .foregroundStyle(.orange) from both demo labels and keep them bold in the primary label color (13.2:1 measured for primary text on the same background)."
+      },
+      {
+        "id": "APP-07",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 5,
+          "y": 76
+        },
+        "source": "hig",
+        "higRequirement": "accessibility.contrast.non-text",
+        "severity": 1,
+        "confidence": "measured",
+        "measurement": "panel-warning-symbol-light: fail, 2.01:1, minimum 3.0:1 (wcag-1.4.11-non-text); panel-met-symbol-light: fail, 1.87:1",
+        "claim": "In light appearance the orange warning triangle (2.01:1) and the green 'met' check (1.87:1) fall below 3:1 against the panel; shape still carries the meaning, so the impact is low.",
+        "expectedFix": "Tint met service levels .secondary instead of .green (MenuBarViews.swift:111) so only misses carry color, and recheck the warning triangle with Increase Contrast on."
+      },
+      {
+        "id": "APP-08",
+        "surface": "hosts",
+        "appearance": "light",
+        "screenshot": "hosts-light.png",
+        "marker": {
+          "x": 6,
+          "y": 14
+        },
+        "source": "hig",
+        "higRequirement": "accessibility.contrast.text",
+        "severity": 1,
+        "confidence": "measured",
+        "measurement": "sidebar-selected-light: fail, 2.39:1, minimum 4.5:1 (apple-contrast-text-normal); sidebar-selected-dark: fail, 3.83:1",
+        "claim": "The system-drawn sidebar selection, while the sidebar lacks keyboard focus, puts white text on gray at 2.39:1 in light and 3.83:1 in dark.",
+        "expectedFix": "No app change: this is the standard unfocused List selection. Recheck with Increase Contrast on; keep the sidebar a standard List."
+      },
+      {
+        "id": "APP-09",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 11,
+          "y": 95
+        },
+        "source": "hig",
+        "higRequirement": "macos.menu-bar-extra.not-sole-path",
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "The menu bar extra is the only way into the app: a plain launch opened no window, the Details window is suppressed at launch (LittleCIApp.swift:29), there is no Dock icon, and nothing handles a reopen, so a hidden extra (notch overflow or a menu bar manager, as on this Mac) leaves no path to Details.",
+        "expectedFix": "Add an NSApplicationDelegateAdaptor whose applicationShouldHandleReopen opens the details window, so opening the app again from Finder or Spotlight shows Details."
+      },
+      {
+        "id": "PNL-01",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 30,
+          "y": 23
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.6",
+          "diagnostic.10"
+        ],
+        "higRequirement": "macos.lists-tables.behavior",
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "The compact service-level grid truncates names and values ('Time to detect a dead run\u2026', 'median 14 min, p90 26 min\u2026') with no way to read the rest in the panel (MenuBarViews.swift:112-113).",
+        "expectedFix": "Add .fixedSize(horizontal: false, vertical: true) to Text(level.name) and Text(level.measured) in ServiceLevelGrid so long cells wrap to a second line."
+      },
+      {
+        "id": "PNL-02",
+        "surface": "panel",
+        "appearance": "light",
+        "screenshot": "panel-light.png",
+        "marker": {
+          "x": 29,
+          "y": 95
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.5",
+          "diagnostic.9"
+        ],
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "In demo mode the panel's plan buttons, Refresh and the lend checkbox are dimmed with no reason; only the Details window says plans are disabled (MenuBarViews.swift:55, MenuBarViews.swift:92, MenuBarViews.swift:160).",
+        "expectedFix": "Change the panel label to Text(\"Demo data: plans are off\") and add .help(\"Plans are off while demo data is on.\") to PlanButton and Refresh when store.isDemo."
+      },
+      {
+        "id": "OVR-01",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 27,
+          "y": 69
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.3",
+          "diagnostic.7"
+        ],
+        "severity": 2,
+        "confidence": "needs device test",
+        "claim": "In the plan review window, Cancel only clears store.review and leaves the window open showing 'No plan under review.' (DetailsWindow.swift:311, DetailsWindow.swift:324); source only, untested at runtime.",
+        "expectedFix": "Read @Environment(\\.dismiss) in PlanReviewWindow and call dismiss() after store.review = nil in the Cancel action."
+      },
+      {
+        "id": "OVR-02",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 25,
+          "y": 85
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.5",
+          "diagnostic.7"
+        ],
+        "severity": 2,
+        "confidence": "needs device test",
+        "claim": "Run is the default button (Return) in the plan review window, also for irreversible plans such as cancel runs and retire, so one stray Return runs the plan (DetailsWindow.swift:315); source only, untested at runtime.",
+        "expectedFix": "Remove .keyboardShortcut(.defaultAction) from Run and keep Cancel on .cancelAction, so running needs a click or Tab then Space."
+      },
+      {
+        "id": "OVR-03",
+        "surface": "overview",
+        "appearance": "light",
+        "screenshot": "overview-light.png",
+        "marker": {
+          "x": 19,
+          "y": 4
+        },
+        "source": "hig",
+        "higRequirement": "macos.windows.behavior",
+        "severity": 1,
+        "confidence": "observed",
+        "claim": "The Details window title is 'Little CI' on every pane; the title never names the pane (no navigationTitle in DetailsWindow.swift).",
+        "expectedFix": "Add .navigationTitle(pane.rawValue) to the detail column in DetailsWindow so the title reads Overview, Hosts, Runners, Queue or Events."
+      },
+      {
+        "id": "HST-01",
+        "surface": "hosts",
+        "appearance": "light",
+        "screenshot": "hosts-light.png",
+        "marker": {
+          "x": 39,
+          "y": 87
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.1",
+          "diagnostic.5"
+        ],
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "A host with no probe result shows no facts and no status line (Studio VM, Hetzner), and the Runners pane shows their service as 'unknown' with no reason (DetailsWindow.swift:101-104, DetailsWindow.swift:185).",
+        "expectedFix": "Add a branch after line 104: if observation == nil { Text(\"No probe result yet.\").font(.callout) }."
+      },
+      {
+        "id": "HST-02",
+        "surface": "hosts",
+        "appearance": "light",
+        "screenshot": "hosts-light.png",
+        "marker": {
+          "x": 66,
+          "y": 20
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.4",
+          "diagnostic.10"
+        ],
+        "higRequirement": "design.principles.craft",
+        "severity": 1,
+        "confidence": "observed",
+        "claim": "Swap reads 'Zero KB of Zero KB' (ByteCountFormatter's zero), and fact labels mix lowercase ('load', 'swap', 'disk', 'observed') with capitalized ('Docker', 'Compose') (DetailsWindow.swift:128-146, 156-159).",
+        "expectedFix": "In FactsGrid.swap (DetailsWindow.swift:156-159) return \"none\" when the swap total is 0, and capitalize the fact labels (Load, Memory free, Swap, Observed, Disk)."
+      },
+      {
+        "id": "HST-03",
+        "surface": "hosts",
+        "appearance": "light",
+        "screenshot": "hosts-light.png",
+        "marker": {
+          "x": 90,
+          "y": 16
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.1",
+          "nielsen.6"
+        ],
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "The Notifications menu never shows whether a host is paused or until when, and stays enabled in demo mode, where pauseNotifications silently does nothing (DetailsWindow.swift:95-99, FleetStore.swift:78-80).",
+        "expectedFix": "Title the menu from state.settings.maintenanceUntil[host.id] (for example 'Paused until 14:30', else 'Notifications') and add .disabled(store.isDemo)."
+      },
+      {
+        "id": "HST-04",
+        "surface": "hosts",
+        "appearance": "light",
+        "screenshot": "hosts-light.png",
+        "marker": {
+          "x": 93,
+          "y": 16
+        },
+        "source": "hig",
+        "higRequirement": "content.menus.labels",
+        "severity": 1,
+        "confidence": "observed",
+        "claim": "Menu items 'Pause for 1 hour' and 'Resume' do not use title-style capitalization, and Resume is enabled when nothing is paused (DetailsWindow.swift:96-97).",
+        "expectedFix": "Rename to 'Pause for 1 Hour' and disable Resume unless the host has a future maintenanceUntil."
+      },
+      {
+        "id": "RUN-01",
+        "surface": "runners",
+        "appearance": "light",
+        "screenshot": "runners-light.png",
+        "marker": {
+          "x": 86,
+          "y": 31
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.8",
+          "diagnostic.9"
+        ],
+        "higRequirement": "accessibility.text.size",
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "Runner-row plan buttons repeat the runner name and clip it ('Start dem\u2026', 'Retire de\u2026'), and long runner names wrap mid-name ('little-ci-acme-' / 'widgets-vm-1') (DetailsWindow.swift:204, DetailsWindow.swift:209).",
+        "expectedFix": "In the runner row show verb-only button labels (Start\u2026, Retire\u2026) with the full plan.title as .help and .accessibilityLabel, and add .lineLimit(1).fixedSize() to the runner name."
+      },
+      {
+        "id": "QUE-01",
+        "surface": "queue",
+        "appearance": "light",
+        "screenshot": "queue-light.png",
+        "marker": {
+          "x": 61,
+          "y": 29
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.6",
+          "diagnostic.9"
+        ],
+        "higRequirement": "accessibility.target.macos",
+        "severity": 2,
+        "confidence": "measured",
+        "measurement": "queue-run-link: fail, 17.5 x 15 pt, minimum 20 x 20 pt (apple-target-macos)",
+        "claim": "Every queue row ends in an identical 'run' link (17.5 x 15 pt), so VoiceOver hears 'run' eight times and the two fix/login rows differ only by age; the run number appears only in the finding evidence below (DetailsWindow.swift:246).",
+        "expectedFix": "Label the link with the run number: Link(\"#\\(entry.run.id)\", destination: \u2026) plus .help(\"Open run #\\(entry.run.id) on GitHub\")."
+      },
+      {
+        "id": "QUE-02",
+        "surface": "queue",
+        "appearance": "light",
+        "screenshot": "queue-light.png",
+        "marker": {
+          "x": 34,
+          "y": 54
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.2",
+          "nielsen.4"
+        ],
+        "severity": 1,
+        "confidence": "observed",
+        "claim": "Raw API codes leak into the UI ('in_progress' DetailsWindow.swift:243, 'pullRequestClosed' from Assessor.swift:417), and lane headings mix case ('main', 'platform and parity', 'perf lanes' next to 'PRs into main', Assessment.swift:156-159).",
+        "expectedFix": "Show entry.run.status with underscores replaced by spaces, reuse the 'PR closed' wording in Assessor.swift:417, and sentence-case the lane titles ('Platform and parity', 'Performance lanes')."
+      },
+      {
+        "id": "EVT-01",
+        "surface": "events",
+        "appearance": "light",
+        "screenshot": "events-light.png",
+        "marker": {
+          "x": 28,
+          "y": 15
+        },
+        "source": "ux",
+        "heuristics": [
+          "nielsen.1",
+          "nielsen.4"
+        ],
+        "severity": 2,
+        "confidence": "needs device test",
+        "claim": "A cleared finding keeps its original severity, so the Events pane draws a red octagon next to 'Cleared: \u2026' and a fixed problem looks active (EventJournal.swift:61, DetailsWindow.swift:274); demo data has no cleared events, so this is from source.",
+        "expectedFix": "In EventsPane use checkmark.circle tinted .secondary when event.kind == .findingCleared, and the severity symbol otherwise."
+      },
+      {
+        "id": "EVT-02",
+        "surface": "events",
+        "appearance": "light",
+        "screenshot": "events-light.png",
+        "marker": {
+          "x": 80,
+          "y": 34
+        },
+        "source": "both",
+        "heuristics": [
+          "nielsen.9",
+          "diagnostic.6"
+        ],
+        "higRequirement": "content.writing.clarity",
+        "severity": 2,
+        "confidence": "observed",
+        "claim": "An unreachable host reads 'Laptop is away' with raw ssh output as the only detail, and the Hosts pane shows 'Not reached: <ssh error>' with no next step (DetailsWindow.swift:104).",
+        "expectedFix": "Append a next step to the Hosts line, for example 'Not reached over SSH: <reason>. Check that the host is awake and that ssh <destination> works in batch mode.'"
+      }
+    ],
+    "withdrawnFindingIds": [],
+    "nonFindings": [
+      {
+        "surface": "panel",
+        "claim": "Dense one-line rows with dividers and no card backgrounds follow the design contract."
+      },
+      {
+        "surface": "panel",
+        "claim": "The window-style menu bar extra is justified by the service grid, multi-line findings and inline plan buttons."
+      },
+      {
+        "surface": "overview",
+        "claim": "Section headings are primary bold text with no gray subtitle line above them."
+      },
+      {
+        "surface": "overview",
+        "claim": "Finding evidence in monospaced text is dense but readable and selectable; it is intended diagnostic output."
+      },
+      {
+        "surface": "hosts",
+        "claim": "The Studio checkbox is dimmed only because demo mode disables lending; not a defect outside demo mode."
+      },
+      {
+        "surface": "runners",
+        "claim": "A plain Grid without card chrome or row striping is correct under the contract."
+      },
+      {
+        "surface": "events",
+        "claim": "Absolute event times (Oct 20 at 12:29) do not repaint and match the contract."
+      },
+      {
+        "surface": "panel",
+        "claim": "A plain launch opened no stray empty 'Review plan' window, although that scene lacks defaultLaunchBehavior(.suppressed)."
+      }
+    ],
+    "ux": {
+      "score": 4,
+      "failedRows": [
+        {
+          "row": 5,
+          "findingIds": [
+            "APP-01",
+            "APP-03",
+            "HST-01",
+            "EVT-01"
+          ]
+        },
+        {
+          "row": 6,
+          "findingIds": [
+            "EVT-02"
+          ]
+        },
+        {
+          "row": 7,
+          "findingIds": [
+            "OVR-01",
+            "OVR-02"
+          ]
+        },
+        {
+          "row": 9,
+          "findingIds": [
+            "PNL-02",
+            "QUE-01",
+            "RUN-01",
+            "APP-05"
+          ]
+        },
+        {
+          "row": 10,
+          "findingIds": [
+            "PNL-01",
+            "HST-02",
+            "QUE-02"
+          ]
+        }
+      ]
+    },
+    "hig": {
+      "requirements": [
+        {
+          "id": "design.principles.purpose",
+          "outcome": "pass",
+          "evidence": "observed: panel-light.png leads with service levels, then findings ordered critical before warning"
+        },
+        {
+          "id": "design.principles.agency",
+          "outcome": "pass",
+          "evidence": "needs device test: every change is a plan with commands, effect and preconditions before Run (DetailsWindow.swift:285-319)"
+        },
+        {
+          "id": "design.principles.responsibility",
+          "outcome": "pass",
+          "evidence": "observed: demo data labeled on every surface; OutcomeView shows failed step output and recovery (DetailsWindow.swift:338-356)"
+        },
+        {
+          "id": "design.principles.familiarity",
+          "outcome": "pass",
+          "evidence": "observed: NavigationSplitView sidebar, toolbar, standard buttons, checkbox and pull-down menu in all captures"
+        },
+        {
+          "id": "design.principles.flexibility",
+          "outcome": "untested",
+          "testNeeded": "Resize the Details window to its 820 x 520 minimum, and run once with Full Keyboard Access, Increase Contrast and Reduce Transparency"
+        },
+        {
+          "id": "design.principles.simplicity",
+          "outcome": "pass",
+          "evidence": "observed: one line per fact, no welcome or filler text in any capture"
+        },
+        {
+          "id": "design.principles.craft",
+          "outcome": "fail",
+          "findingIds": [
+            "HST-02"
+          ]
+        },
+        {
+          "id": "design.principles.delight",
+          "outcome": "pass",
+          "evidence": "observed: no decoration; character comes from precise findings and suggested actions"
+        },
+        {
+          "id": "macos.menu-bar-extra.symbol",
+          "outcome": "untested",
+          "testNeeded": "Capture the status item in light and dark menu bars and with it selected; a menu bar manager hid it on this Mac. Source uses template SF Symbols (MenuBarViews.swift:40)"
+        },
+        {
+          "id": "macos.menu-bar-extra.menu-first",
+          "outcome": "pass",
+          "evidence": "observed: the window style is justified; the panel holds a five-row service grid with values, multi-line findings with inline plan buttons, and lend checkboxes, which a plain menu cannot show compactly"
+        },
+        {
+          "id": "macos.menu-bar-extra.not-sole-path",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-09"
+          ]
+        },
+        {
+          "id": "macos.menu-bar-extra.user-control",
+          "outcome": "untested",
+          "testNeeded": "Hide the extra in System Settings > Menu Bar and confirm the app quits or can be brought back, and that the README says how"
+        },
+        {
+          "id": "macos.windows.behavior",
+          "outcome": "fail",
+          "findingIds": [
+            "OVR-03"
+          ]
+        },
+        {
+          "id": "macos.windows.bottom-edge",
+          "outcome": "pass",
+          "evidence": "observed: Details window keeps findings and actions at the top of each pane; panel buttons at the panel foot follow the menu bar extra pattern"
+        },
+        {
+          "id": "macos.sidebar.structure",
+          "outcome": "pass",
+          "evidence": "observed: one level, five panes, familiar symbols, highlighted selection, sidebar toggle in the toolbar (hosts-light.png)"
+        },
+        {
+          "id": "macos.toolbar.items",
+          "outcome": "pass",
+          "evidence": "observed: two items (Demo data toggle, Refresh with arrow.clockwise and a text label in source DetailsWindow.swift:46-50)"
+        },
+        {
+          "id": "macos.lists-tables.behavior",
+          "outcome": "fail",
+          "findingIds": [
+            "PNL-01"
+          ]
+        },
+        {
+          "id": "macos.controls.toggles",
+          "outcome": "pass",
+          "evidence": "observed: lend setting is a checkbox in the window body with an obvious checked state (panel-light.png, hosts-light.png)"
+        },
+        {
+          "id": "macos.alerts.use",
+          "outcome": "na",
+          "reason": "The app shows no alerts; confirmation happens in the plan review window"
+        },
+        {
+          "id": "macos.progress.honesty",
+          "outcome": "pass",
+          "evidence": "needs device test: content shows as soon as state exists, and 'Reading GitHub and the hosts\u2026' before (DetailsWindow.swift:43); the contract replaces spinners, filed as APP-02"
+        },
+        {
+          "id": "macos.keyboard.shortcuts",
+          "outcome": "untested",
+          "testNeeded": "Check Command-D, Command-R, Command-Q in the panel and Shift-Command-D in Details, then do every task with Full Keyboard Access"
+        },
+        {
+          "id": "appearance.materials.liquid-glass",
+          "outcome": "pass",
+          "evidence": "observed: system window and toolbar materials only; no .background, .glassEffect or custom shapes in app/Sources"
+        },
+        {
+          "id": "appearance.color.semantics",
+          "outcome": "pass",
+          "evidence": "observed: severity uses system red, orange and secondary consistently (MenuBarViews.swift:13-19); the orange demo label collision is filed under APP-06"
+        },
+        {
+          "id": "appearance.dark-mode",
+          "outcome": "pass",
+          "evidence": "observed: all six surfaces legible in light and dark captures; --appearance is a capture flag, not a user setting"
+        },
+        {
+          "id": "appearance.typography.text-styles",
+          "outcome": "pass",
+          "evidence": "observed: system text styles only (.headline, .body, .callout, .caption at 10 pt, .title3), no light weights"
+        },
+        {
+          "id": "appearance.sf-symbols.usage",
+          "outcome": "pass",
+          "evidence": "observed: system symbols with familiar meanings, matched to adjacent text size, no symbol effects"
+        },
+        {
+          "id": "appearance.layout.hierarchy",
+          "outcome": "pass",
+          "evidence": "observed: grids aligned for scanning; worst findings first; plan buttons sit under the finding they act on"
+        },
+        {
+          "id": "appearance.motion.purposeful",
+          "outcome": "pass",
+          "evidence": "observed: no animation modifiers in app/Sources (grep for withAnimation, .animation, symbolEffect)"
+        },
+        {
+          "id": "accessibility.contrast.text",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-08"
+          ]
+        },
+        {
+          "id": "accessibility.contrast.large-text",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-06"
+          ]
+        },
+        {
+          "id": "accessibility.contrast.non-text",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-07"
+          ]
+        },
+        {
+          "id": "accessibility.contrast.increase-contrast",
+          "outcome": "untested",
+          "testNeeded": "Capture all surfaces with Increase Contrast on, in light and dark"
+        },
+        {
+          "id": "accessibility.color.independence",
+          "outcome": "pass",
+          "evidence": "observed: severity differs by shape (octagon, triangle, circle) and service levels by check versus cross"
+        },
+        {
+          "id": "accessibility.target.macos",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-04",
+            "QUE-01"
+          ]
+        },
+        {
+          "id": "accessibility.target.spacing",
+          "outcome": "pass",
+          "evidence": "observed: adjacent plan buttons are separated by about 7.5 pt and differ in label (panel-light.png, runners-light.png)"
+        },
+        {
+          "id": "accessibility.voiceover.labels",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-05"
+          ]
+        },
+        {
+          "id": "accessibility.voiceover.navigation",
+          "outcome": "untested",
+          "testNeeded": "Walk the panel and each pane with VoiceOver and confirm headings and reading order"
+        },
+        {
+          "id": "accessibility.text.size",
+          "outcome": "fail",
+          "findingIds": [
+            "RUN-01"
+          ]
+        },
+        {
+          "id": "accessibility.motion.reduced-motion",
+          "outcome": "untested",
+          "testNeeded": "Run a plan with Reduce Motion on and confirm no repeating animation remains"
+        },
+        {
+          "id": "accessibility.transparency.reduced",
+          "outcome": "untested",
+          "testNeeded": "Capture all surfaces with Reduce Transparency on"
+        },
+        {
+          "id": "accessibility.cognitive.timing",
+          "outcome": "pass",
+          "evidence": "needs device test: the plan review states the 15-minute expiry in plain words before Run (DetailsWindow.swift:305); no view dismisses on a timer"
+        },
+        {
+          "id": "content.writing.clarity",
+          "outcome": "fail",
+          "findingIds": [
+            "EVT-02"
+          ]
+        },
+        {
+          "id": "content.menus.labels",
+          "outcome": "fail",
+          "findingIds": [
+            "HST-04"
+          ]
+        },
+        {
+          "id": "project.density",
+          "outcome": "pass",
+          "evidence": "observed: one line per fact and tight grids in every capture"
+        },
+        {
+          "id": "project.chrome.no-decorative-containers",
+          "outcome": "pass",
+          "evidence": "observed: no cards, tinted panels or capsule badges; grep finds no .background, RoundedRectangle, Capsule or clipShape in app/Sources"
+        },
+        {
+          "id": "project.text.no-section-subtitles",
+          "outcome": "pass",
+          "evidence": "observed: section headings are primary .headline text with nothing above them (Heading, DetailsWindow.swift:55-60)"
+        },
+        {
+          "id": "project.text.no-em-dashes",
+          "outcome": "pass",
+          "evidence": "observed: grep for U+2014 in app/Sources finds none; no em dash in any capture"
+        },
+        {
+          "id": "project.motion.no-continuous-repaint",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-01",
+            "APP-02"
+          ]
+        },
+        {
+          "id": "project.menu-bar.worst-finding-glyph",
+          "outcome": "fail",
+          "findingIds": [
+            "APP-03"
+          ]
+        }
+      ],
+      "measurements": {
+        "input": ".crit/2026-10-20-menu-bar-app/before/hig-measurements.json",
+        "report": ".crit/2026-10-20-menu-bar-app/before/hig-report.json",
+        "reportSha256": "5d8a34b27da0d06d02687d49b4d29571c501e39f12d5230c76c9196d2aacbcb5"
+      }
+    },
+    "verdict": "Changes required"
+  },
+  "fixSelections": [
+    {
+      "id": "selection-1",
+      "recordedAt": "2026-10-20T18:20:00Z",
+      "findingIds": [
+        "APP-01",
+        "APP-03",
+        "OVR-02"
+      ],
+      "evidence": "The owner asked for one round of fixes after the crit. Chosen: the two severity 3 findings (ticking timestamps break the design contract; the glyph shows loading when all is clear) and the one finding that can run an irreversible plan by accident. APP-02 (spinner) and the severity 2 findings stay open for a later round."
+    }
+  ],
+  "rounds": [
+    {
+      "id": "round-1",
+      "recordedAt": "2026-10-20T18:20:00Z",
+      "code": {
+        "kind": "committed",
+        "baseCommit": "8db0394fc8e135eafec21d33989ea73afa9ff26e",
+        "commits": [
+          "ec1ad31a596d41236912217f9025ffba770c6b56"
+        ]
+      },
+      "actors": {
+        "reviewer": null,
+        "executor": {
+          "kind": "agent",
+          "name": "Claude Code session (orchestrator)",
+          "provider": "Anthropic",
+          "model": "claude-opus-5-5",
+          "harness": "Claude Code desktop app"
+        },
+        "verifier": {
+          "kind": "agent",
+          "name": "Claude Code session (orchestrator)",
+          "provider": "Anthropic",
+          "model": "claude-opus-5-5",
+          "harness": "Claude Code desktop app"
+        }
+      },
+      "captures": {
+        "phase": "after",
+        "data": "demo",
+        "manifestSha256": "e96c57cf727ff83a74ce40d9ed6b36220ae36f9ab8fd3f872adf6ba78087eda8",
+        "files": [
+          {
+            "file": "overview-light.png",
+            "surface": "overview",
+            "appearance": "light",
+            "sha256": "4953d2b3838720ff5b07a2d660bae9848894feb201a06b1a20288c68fb9c6f7f"
+          },
+          {
+            "file": "panel-light.png",
+            "surface": "panel",
+            "appearance": "light",
+            "sha256": "dca9352f0a9872148da81ed74331ac3e9d705cc390dc53af4e26e3c07fc6e973"
+          },
+          {
+            "file": "hosts-light.png",
+            "surface": "hosts",
+            "appearance": "light",
+            "sha256": "cd89cc3b1cb03b80f31bfcd306480975a7d2729a443813ba2105ffeb8db12e45"
+          },
+          {
+            "file": "runners-light.png",
+            "surface": "runners",
+            "appearance": "light",
+            "sha256": "ea998fc78f4ff13b573b15f10b209ed5ff403ce59fc6edd5eff60606f584185d"
+          },
+          {
+            "file": "queue-light.png",
+            "surface": "queue",
+            "appearance": "light",
+            "sha256": "1b8889d41e87113d4969dea95a93ae04990b0eb129ae1704bba2dc4088ac3d53"
+          },
+          {
+            "file": "events-light.png",
+            "surface": "events",
+            "appearance": "light",
+            "sha256": "35187be2345ce85c3bb60f5dea0fb6cb471410af537934651bf54db60a380b43"
+          },
+          {
+            "file": "overview-dark.png",
+            "surface": "overview",
+            "appearance": "dark",
+            "sha256": "1c3a1f7cc172dbdc0151451ee0ad071404a76038614c71d60740924408e14314"
+          },
+          {
+            "file": "panel-dark.png",
+            "surface": "panel",
+            "appearance": "dark",
+            "sha256": "829a8cca3a45be93d47327ad0b0b46c56f961d7e796f70dd26df705b7037732b"
+          },
+          {
+            "file": "hosts-dark.png",
+            "surface": "hosts",
+            "appearance": "dark",
+            "sha256": "15a02093fb427f67a4c9d029eaf0ca1211517958d35e25a888dc30c92d1e657d"
+          },
+          {
+            "file": "runners-dark.png",
+            "surface": "runners",
+            "appearance": "dark",
+            "sha256": "3d2be0a22d0bb935892d097f2d6e0e9f8528ce7bd9c7c82726fa732c8fc1f0d9"
+          },
+          {
+            "file": "queue-dark.png",
+            "surface": "queue",
+            "appearance": "dark",
+            "sha256": "9ae2907336acaa438ed0d20b4a4b5b766f082daae4d9d2c6df2f7b2d2f81bdc1"
+          },
+          {
+            "file": "events-dark.png",
+            "surface": "events",
+            "appearance": "dark",
+            "sha256": "b36685de1195b3ae7648f34abe8053df0d4d64d40a3bf173061a1a7934892f28"
+          }
+        ]
+      },
+      "changes": [
+        {
+          "id": "change-1",
+          "findingIds": [
+            "APP-01"
+          ],
+          "problem": "Relative timestamps in the panel, Hosts, Queue and plan review re-rendered every second.",
+          "outcome": "They are fixed text (\"just now\", \"3 min. ago\") that changes when the fleet state updates; the plan expiry is an absolute time.",
+          "status": "verified",
+          "actors": {
+            "reviewer": null,
+            "executor": {
+              "kind": "agent",
+              "name": "Claude Code session (orchestrator)",
+              "provider": "Anthropic",
+              "model": "claude-opus-5-5",
+              "harness": "Claude Code desktop app"
+            },
+            "verifier": {
+              "kind": "agent",
+              "name": "Claude Code session (orchestrator)",
+              "provider": "Anthropic",
+              "model": "claude-opus-5-5",
+              "harness": "Claude Code desktop app"
+            }
+          },
+          "evidence": [
+            {
+              "kind": "test",
+              "description": "swift test --package-path app: 37 tests, 0 failures; grep finds no Text(_, style: .relative) in app/Sources"
+            },
+            {
+              "kind": "behavior",
+              "description": "after captures show \"GitHub just now\" in the panel and \"3 min. ago\" in Queue"
+            }
+          ],
+          "pairs": [
+            {
+              "surface": "panel",
+              "appearance": "light"
+            },
+            {
+              "surface": "queue",
+              "appearance": "light"
+            }
+          ]
+        },
+        {
+          "id": "change-2",
+          "findingIds": [
+            "APP-03"
+          ],
+          "problem": "With no findings the menu bar glyph showed circle.dotted, the same symbol as \"still reading\", and VoiceOver heard only \"Little CI\".",
+          "outcome": "The glyph is checkmark.circle when nothing above info is open, circle.dotted only before the first state, and its label says all clear, warnings, N critical, reading or needs setup.",
+          "status": "implemented",
+          "actors": {
+            "reviewer": null,
+            "executor": {
+              "kind": "agent",
+              "name": "Claude Code session (orchestrator)",
+              "provider": "Anthropic",
+              "model": "claude-opus-5-5",
+              "harness": "Claude Code desktop app"
+            },
+            "verifier": null
+          },
+          "evidence": [
+            {
+              "kind": "behavior",
+              "description": "MenuBarGlyph picks the symbol from store.state first (MenuBarViews.swift); the glyph itself was not captured because a menu bar manager hides it on this Mac"
+            }
+          ]
+        },
+        {
+          "id": "change-3",
+          "findingIds": [
+            "OVR-02"
+          ],
+          "problem": "Return pressed the Run button in the plan review window, including for plans that cannot be undone.",
+          "outcome": "Run has no keyboard shortcut; only a click runs a plan. Escape still cancels.",
+          "status": "implemented",
+          "actors": {
+            "reviewer": null,
+            "executor": {
+              "kind": "agent",
+              "name": "Claude Code session (orchestrator)",
+              "provider": "Anthropic",
+              "model": "claude-opus-5-5",
+              "harness": "Claude Code desktop app"
+            },
+            "verifier": null
+          },
+          "evidence": [
+            {
+              "kind": "behavior",
+              "description": "DetailsWindow.swift: .keyboardShortcut(.defaultAction) removed from Run; untested at runtime because plans are disabled in demo data"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commitLinks": []
+}

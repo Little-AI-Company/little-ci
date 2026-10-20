@@ -1,0 +1,18 @@
+{
+ "id": 118387298403,
+ "run_id": 39330491976,
+ "name": "Test 2",
+ "status": "completed",
+ "conclusion": "failure",
+ "created_at": "2026-10-20T00:36:35Z",
+ "started_at": "2026-10-20T00:51:25Z",
+ "completed_at": "2026-10-20T00:54:27Z",
+ "runner_name": "ci-m4-check-1",
+ "labels": [
+  "self-hosted",
+  "example-repo-check"
+ ],
+ "head_sha": "e2e5f12b5e0cc8fede9ecf8a9cb1a395fc24ce42",
+ "head_branch": "feature/branch-6",
+ "run_attempt": 1
+}

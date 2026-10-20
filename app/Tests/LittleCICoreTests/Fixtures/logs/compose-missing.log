@@ -1,0 +1,41 @@
+2026-10-20T03:53:38.1548570Z ##[start-action display=Check Bun and Node versions;id=__self.__run]
+2026-10-20T03:53:38.1601920Z ##[group]Run wanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"
+2026-10-20T03:53:38.1602400Z [36;1mwanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"[0m
+2026-10-20T03:53:38.1603260Z [36;1mhave="$(bun --version)"[0m
+2026-10-20T03:53:38.1603610Z [36;1mecho "bun $have, node $(node --version), $(sysctl -n hw.ncpu) cores, load $(sysctl -n vm.loadavg)"[0m
+2026-10-20T03:53:38.1603940Z [36;1mif [ "$have" != "$wanted" ]; then[0m
+2026-10-20T03:53:38.1604670Z [36;1m  echo "::error::The M1 has Bun $have; package.json asks for $wanted. On the M1: bun upgrade (or curl -fsSL https://bun.sh/install | bash -s bun-v$wanted)"[0m
+2026-10-20T03:53:38.1605080Z [36;1m  exit 1[0m
+2026-10-20T03:53:38.1605240Z [36;1mfi[0m
+2026-10-20T03:53:38.1605500Z [36;1mnode -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' ||[0m
+2026-10-20T03:53:38.1606980Z [36;1m  { echo "::error::The M1 needs Node 24 or newer: brew upgrade node"; exit 1; }[0m
+2026-10-20T03:53:38.1627840Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-20T03:53:38.1628140Z env:
+2026-10-20T03:53:38.1628500Z   CI: true
+2026-10-20T03:53:38.1628770Z   TURBO_TELEMETRY_DISABLED: 1
+2026-10-20T03:53:38.1629150Z   GIT_AUTHOR_NAME: Example CI
+2026-10-20T03:53:40.8098800Z   TMPDIR: /Users/builder3/example-repo-ci/runners/ci-m3-check-1/_work/_temp
+2026-10-20T03:53:40.8099130Z ##[endgroup]
+2026-10-20T03:53:41.0821980Z ==> throwaway app MySQL
+2026-10-20T03:53:41.4300490Z unknown shorthand flag: 'f' in -f
+2026-10-20T03:53:41.4301100Z 
+2026-10-20T03:53:41.4301550Z Usage:  docker [OPTIONS] COMMAND [ARG...]
+2026-10-20T03:53:41.4301850Z 
+2026-10-20T03:53:41.4302070Z Run 'docker --help' for more information
+2026-10-20T03:53:41.4302640Z the throwaway app MySQL did not start on port 3531 (try 1 of 3)
+2026-10-20T03:53:41.4303220Z unknown shorthand flag: 'f' in -f
+2026-10-20T03:53:41.4304170Z 
+2026-10-20T03:53:41.4304360Z Usage:  docker [OPTIONS] COMMAND [ARG...]
+2026-10-20T03:53:41.4304530Z 
+2026-10-20T03:53:41.4304600Z Run 'docker --help' for more information
+2026-10-20T03:53:41.4304870Z the throwaway app MySQL did not start on port 3674 (try 2 of 3)
+2026-10-20T03:53:41.4307540Z unknown shorthand flag: 'f' in -f
+2026-10-20T03:53:41.4307970Z 
+2026-10-20T03:53:41.4308170Z Usage:  docker [OPTIONS] COMMAND [ARG...]
+2026-10-20T03:53:41.4308500Z 
+2026-10-20T03:53:41.4308690Z Run 'docker --help' for more information
+2026-10-20T03:53:41.4309230Z the throwaway app MySQL did not start on port 3417 (try 3 of 3)
+2026-10-20T03:53:41.4693350Z ##[error]Process completed with exit code 1.
+2026-10-20T03:53:41.4810880Z Post job cleanup.
+2026-10-20T03:53:41.6085470Z [command]/usr/bin/git version
+2026-10-20T03:53:41.6346460Z git version 2.54.0 (Apple Git-157)

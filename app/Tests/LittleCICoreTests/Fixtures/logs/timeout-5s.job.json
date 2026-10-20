@@ -1,0 +1,18 @@
+{
+ "id": 118507923327,
+ "run_id": 39385732722,
+ "name": "Changes",
+ "status": "completed",
+ "conclusion": "failure",
+ "created_at": "2026-10-20T07:27:32Z",
+ "started_at": "2026-10-20T07:27:33Z",
+ "completed_at": "2026-10-20T07:33:14Z",
+ "runner_name": "ci-m4-check-1",
+ "labels": [
+  "self-hosted",
+  "example-repo-check"
+ ],
+ "head_sha": "7b6eaf45a7fef57715c892c31a7cda8ce0406688",
+ "head_branch": "platform-branch-5",
+ "run_attempt": 1
+}

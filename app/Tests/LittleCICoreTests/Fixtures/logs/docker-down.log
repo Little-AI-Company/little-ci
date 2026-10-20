@@ -1,0 +1,24 @@
+2026-10-20T06:56:36.0414500Z ##[start-action display=Check Bun and Node versions;id=__self.__run]
+2026-10-20T06:56:36.0451330Z ##[group]Run wanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"
+2026-10-20T06:56:36.0451860Z [36;1mwanted="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"[0m
+2026-10-20T06:56:36.0452180Z [36;1mhave="$(bun --version)"[0m
+2026-10-20T06:56:36.0452560Z [36;1mecho "bun $have, node $(node --version), $(sysctl -n hw.ncpu) cores, load $(sysctl -n vm.loadavg)"[0m
+2026-10-20T06:56:36.0452970Z [36;1mif [ "$have" != "$wanted" ]; then[0m
+2026-10-20T06:56:36.0453530Z [36;1m  echo "::error::The M1 has Bun $have; package.json asks for $wanted. On the M1: bun upgrade (or curl -fsSL https://bun.sh/install | bash -s bun-v$wanted)"[0m
+2026-10-20T06:56:36.0454030Z [36;1m  exit 1[0m
+2026-10-20T06:56:36.0454210Z [36;1mfi[0m
+2026-10-20T06:56:36.0454520Z [36;1mnode -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' ||[0m
+2026-10-20T06:56:36.0454980Z [36;1m  { echo "::error::The M1 needs Node 24 or newer: brew upgrade node"; exit 1; }[0m
+2026-10-20T06:56:36.0494270Z shell: /opt/homebrew/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-20T06:56:36.0494570Z env:
+2026-10-20T06:56:36.0494730Z   CI: true
+2026-10-20T06:56:36.0494920Z   TURBO_TELEMETRY_DISABLED: 1
+2026-10-20T06:56:36.0495130Z   LW_JOB_CONCURRENCY: 3
+2026-10-20T06:56:41.5325940Z   CHECK_SCOPE: --base 61af6ba2b3ae6516a34e06e53851642fb48e8b0e
+2026-10-20T06:56:41.5326350Z   TMPDIR: /Users/builder1/actions-runners.noindex/ci-m1-check-2/_work/_temp
+2026-10-20T06:56:41.5326720Z ##[endgroup]
+2026-10-20T06:56:43.6298560Z failed to connect to the docker API at unix:///Users/builder1/.orbstack/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /Users/builder1/.orbstack/run/docker.sock: connect: no such file or directory
+2026-10-20T06:56:43.6336260Z ##[error]Process completed with exit code 1.
+2026-10-20T06:56:43.6530760Z Post job cleanup.
+2026-10-20T06:56:43.7615620Z [command]/opt/homebrew/bin/git version
+2026-10-20T06:56:43.7857790Z git version 2.56.0
