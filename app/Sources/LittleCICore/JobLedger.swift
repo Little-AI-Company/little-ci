@@ -96,8 +96,8 @@ enum ServiceLevelCalculator {
         let waits = ledger.checkQueueWaits
         let median = percentile(waits, 0.5), p90 = percentile(waits, 0.9)
 
-        let checkLabel = observations.inventory.queue.checkLabel
-        let online = observations.github.map { $0.runners.filter { $0.status == .online && $0.labelNames.contains(checkLabel) }.count }
+        let fresh = observations.github.flatMap { now.timeIntervalSince($0.observedAt) <= Assessor.staleAfter ? $0 : nil }
+        let online = fresh.map { observations.inventory.checkRunners(in: $0).filter { $0.status == .online }.count }
         let machineShare = ledger.judgedFailures > 0 ? Double(ledger.machineFailures) / Double(ledger.judgedFailures) : nil
 
         return [
@@ -110,7 +110,7 @@ enum ServiceLevelCalculator {
                          target: "≥ \(targets.minimumAvailableCheckRunners)",
                          measured: online.map(String.init) ?? "unknown",
                          met: online.map { $0 >= targets.minimumAvailableCheckRunners },
-                         basis: "GitHub runner list now"),
+                         basis: fresh == nil ? "GitHub data is not current" : "this fleet's runners on GitHub now"),
             ServiceLevel(id: "detect", name: "Time to detect a dead runner",
                          target: "≤ \(Format.duration(targets.detectDeadRunnerSeconds))",
                          measured: "≤ \(Format.duration(FleetMonitor.githubInterval + FleetMonitor.probeInterval)) by design",

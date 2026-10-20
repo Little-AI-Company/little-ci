@@ -54,6 +54,8 @@ public actor FleetMonitor {
     private var hostObservations: [String: HostObservation] = [:]
     private var lastPowerLog: [String: Date] = [:]
     private var ledgerSummary = LedgerSummary.empty
+    /// Completed runs already in the ledger, by run ID, at the update time they were read.
+    private var ledgeredRuns: [Int: Date?] = [:]
     private var assessment: Assessment?
     private var lastOutcome: PlanOutcome?
     private var loops: [Task<Void, Never>] = []
@@ -192,7 +194,7 @@ public actor FleetMonitor {
         let target = inventory.github
         do {
             let runs = try await github.runs(target, query: "status=completed&per_page=50")
-            for run in runs {
+            for run in Self.runsNeedingJobs(runs, ledgered: ledgeredRuns) {
                 let jobs = try await github.jobs(target, runID: run.id, filter: "all")
                 var entries: [LedgerEntry] = []
                 for job in jobs where job.tookRunner && job.conclusion != nil {
@@ -205,12 +207,21 @@ public actor FleetMonitor {
                     entries.append(LedgerEntry(job: job, workflow: run.name, failure: failure))
                 }
                 try await ledger.record(entries)
+                ledgeredRuns[run.id] = run.updatedAt
             }
             ledgerSummary = await ledger.summary(since: Date().addingTimeInterval(-7 * 86_400), checkLabel: inventory.queue.checkLabel)
         } catch {
             githubError = "job ledger: \(error)"
         }
         await assessAndPublish()
+    }
+
+    /// A rerun updates its run, so a run is read again only when its update time changed.
+    static func runsNeedingJobs(_ runs: [WorkflowRun], ledgered: [Int: Date?]) -> [WorkflowRun] {
+        runs.filter { run in
+            guard let seen = ledgered[run.id] else { return true }
+            return seen != run.updatedAt
+        }
     }
 
     private func context(for job: WorkflowJob, among jobs: [WorkflowJob]) -> FailureClassifier.Context {

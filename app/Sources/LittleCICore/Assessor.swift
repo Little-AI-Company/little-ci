@@ -164,7 +164,8 @@ public enum Assessor {
         }
 
         mutating func assessDocker(_ host: HostSpec, _ facts: HostFacts, runnersOnline: [GitHubRunner]) {
-            let checkRunnersOnline = runnersOnline.filter { $0.labelNames.contains(inventory.queue.checkLabel) }
+            let fleetCheckRunners = Set(github.map { inventory.checkRunners(in: $0).map(\.name) } ?? [])
+            let checkRunnersOnline = runnersOnline.filter { fleetCheckRunners.contains($0.name) }
             if let orbstack = facts.orbstack, orbstack.dataMountFailed {
                 add(Finding(id: "orbstack.\(host.id).data", severity: .critical, subject: .host(host.id),
                             title: "OrbStack data could not be mounted on \(host.name)",
@@ -228,14 +229,33 @@ public enum Assessor {
             if machine.info?.record.image?.arch != "arm64" { problems.append("architecture is not arm64") }
             if machine.info?.record.osRelease?.versionID != "24.04" { problems.append("Ubuntu release is not 24.04") }
             if !machine.mountsReadable || !machine.mounts.isEmpty { problems.append("Mac mounts are not empty (\(machine.mounts.isEmpty ? "unreadable" : machine.mounts))") }
-            if machine.identity == nil { problems.append("/etc/little-ci/identity is missing or unreadable") }
-            else if machine.identity?.contains(":\(vm.fleetPrefix):") != true { problems.append("identity does not name fleet \(vm.fleetPrefix)") }
+            problems += identityProblems(machine.identity, vm)
             guard !problems.isEmpty else { return .matches }
             add(Finding(id: "vm.\(host.id).identity", severity: .critical, subject: .host(host.id),
                         title: "\(host.name) does not match little-ci's machine rules",
                         evidence: problems,
                         suggestedAction: "No plan is offered for it. Run little-ci's doctor.sh and inspect the machine; never adopt it automatically."))
             return .mismatched
+        }
+
+        /// little-ci writes `/etc/little-ci/identity` as `key=value` lines (lib/orbstack-machine.sh). Every
+        /// field the inventory knows must match exactly; `home` must be present.
+        func identityProblems(_ identity: String?, _ vm: OrbStackVMHost) -> [String] {
+            guard let identity else { return ["/etc/little-ci/identity is missing or unreadable"] }
+            var fields: [String: String] = [:]
+            for line in identity.split(separator: "\n") {
+                let parts = line.split(separator: "=", maxSplits: 1)
+                if parts.count == 2, fields[String(parts[0])] == nil { fields[String(parts[0])] = String(parts[1]) }
+            }
+            let github = inventory.github
+            let expected = ["machine": vm.machine, "scope": github.scope.rawValue,
+                            "target": github.scope == .repository ? "\(github.owner)/\(github.repository)" : github.owner,
+                            "prefix": vm.fleetPrefix, "user": vm.runnerUser]
+            var problems = expected.sorted { $0.key < $1.key }.compactMap { key, value in
+                fields[key] == value ? nil : "identity \(key) is \(fields[key].map { "\"\($0)\"" } ?? "missing"), expected \"\(value)\""
+            }
+            if (fields["home"] ?? "").isEmpty { problems.append("identity has no home") }
+            return problems
         }
 
         // MARK: Runners
@@ -315,9 +335,7 @@ public enum Assessor {
 
         mutating func assessFleet() {
             guard let github else { return }
-            let label = inventory.queue.checkLabel
-            let checkRunners = github.runners.filter { $0.labelNames.contains(label) }
-            let online = checkRunners.filter { $0.status == .online }
+            let online = inventory.checkRunners(in: github).filter { $0.status == .online }
             let minimum = inventory.serviceLevels.minimumAvailableCheckRunners
             if online.count < minimum {
                 add(Finding(id: "fleet.capacity", severity: .warning, subject: .fleet,
@@ -420,6 +438,20 @@ public enum Assessor {
                     plans: cancelPlans)
             }
         }
+    }
+}
+
+extension Inventory {
+    /// GitHub runners that belong to this fleet: an exact declared name that carries every declared label.
+    /// In organization scope GitHub lists every fleet's runners; only these count.
+    func declaredRunners(in github: GitHubSnapshot) -> [GitHubRunner] {
+        let declared = Dictionary(hosts.flatMap { host in host.runners.map { ($0.name, Set($0.labels)) } }, uniquingKeysWith: { first, _ in first })
+        return github.runners.filter { runner in declared[runner.name]?.isSubset(of: runner.labelNames) ?? false }
+    }
+
+    /// This fleet's runners that serve the check pool.
+    func checkRunners(in github: GitHubSnapshot) -> [GitHubRunner] {
+        declaredRunners(in: github).filter { $0.labelNames.contains(queue.checkLabel) }
     }
 }
 

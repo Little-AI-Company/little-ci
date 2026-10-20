@@ -72,7 +72,7 @@ public enum DemoFleet {
         func run(_ id: Int, branch: String, minutesAgo: Double, status: String = "queued", event: String = "pull_request") -> WorkflowRun {
             WorkflowRun(id: id, name: "CI", event: event, status: status, conclusion: nil, headBranch: branch, headSha: String(repeating: "a", count: 40),
                         displayTitle: "Change on \(branch)", createdAt: now.addingTimeInterval(-minutesAgo * 60), runStartedAt: nil,
-                        runAttempt: 1, pullRequests: [], htmlUrl: "https://github.com/acme/widgets/actions/runs/\(id)")
+                        runAttempt: 1, updatedAt: nil, pullRequests: [], htmlUrl: "https://github.com/acme/widgets/actions/runs/\(id)")
         }
         let github = GitHubSnapshot(
             observedAt: now, runners: runners,

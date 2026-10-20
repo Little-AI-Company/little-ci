@@ -46,7 +46,7 @@ public enum CommandError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .timedOut(let command): "Timed out: \(command)"
+        case .timedOut(let command): "Timed out and was stopped; what it changed is unknown, so review the plan again (the app reads the host first): \(command)"
         case .launchFailed(let reason): "Could not start the command: \(reason)"
         }
     }
@@ -85,8 +85,14 @@ public struct ProcessCommandRunner: CommandRunning {
 
         let seconds = Double(timeout.components.seconds) + Double(timeout.components.attoseconds) / 1e18
         if reader.wait(timeout: .now() + seconds) == .timedOut {
+            // SIGTERM, then SIGKILL after 5 s; return only once the process has exited, so a retry
+            // can never overlap a step that is still running.
             process.terminate()
-            _ = reader.wait(timeout: .now() + 5)
+            let deadline = Date().addingTimeInterval(5)
+            while process.isRunning, Date() < deadline { usleep(50_000) }
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+            process.waitUntilExit()
+            _ = reader.wait(timeout: .now() + 2)
             throw CommandError.timedOut(invocation.displayText)
         }
         process.waitUntilExit()

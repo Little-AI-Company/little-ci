@@ -30,6 +30,7 @@ public struct WorkflowRun: Codable, Sendable, Equatable, Identifiable {
     public var createdAt: Date
     public var runStartedAt: Date?
     public var runAttempt: Int
+    public var updatedAt: Date?
     public var pullRequests: [PullRequestReference]
     public var htmlUrl: String
 
