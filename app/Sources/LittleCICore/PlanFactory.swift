@@ -105,7 +105,8 @@ public enum PlanFactory {
 
     /// Bring-up and teardown through little-ci's own scripts, which carry its identity, busy and teardown checks.
     /// Loads a little-ci checkout's config.env the way its scripts do (lib/github-target.sh) and exits 1, before
-    /// anything changes, when the effective scope, target, prefix, user or machine differs from the reviewed plan.
+    /// anything changes, when the effective scope, target, prefix, user, runner group or machine differs from the
+    /// reviewed plan. Arguments: checkout, scope, target, prefix, user, runner group (empty in repository scope), machine.
     static let configurationCheck = #"""
         set -euo pipefail
         cd "$1"
@@ -121,14 +122,15 @@ public enum PlanFactory {
         check GITHUB_TARGET "$GITHUB_TARGET" "$3"
         check RUNNER_NAME_PREFIX "$RUNNER_NAME_PREFIX" "$4"
         check RUNNER_USER "$RUNNER_USER" "$5"
-        if [ -n "${6:-}" ]; then check ORB_MACHINE "$ORB_MACHINE" "$6"; fi
+        check RUNNER_GROUP "${RUNNER_GROUP:-}" "$6"
+        if [ -n "${7:-}" ]; then check ORB_MACHINE "$ORB_MACHINE" "$7"; fi
         exit "$mismatch"
         """#
 
     static func configurationArguments(_ checkout: String, _ inventory: Inventory, prefix: String, user: String, machine: String?) -> [String] {
         let github = inventory.github
         let target = github.scope == .repository ? "\(github.owner)/\(github.repository)" : github.owner
-        return [checkout, github.scope.rawValue, target, prefix, user] + (machine.map { [$0] } ?? [])
+        return [checkout, github.scope.rawValue, target, prefix, user, github.runnerGroup ?? ""] + (machine.map { [$0] } ?? [])
     }
 
     /// `machineExists`: false offers only bring-up. Callers offer nothing while a VM fails its identity checks.

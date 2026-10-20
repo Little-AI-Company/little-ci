@@ -300,6 +300,7 @@ public struct OrbStackVMFacts: Codable, Sendable, Equatable {
         }
         public struct Image: Codable, Sendable, Equatable {
             public var distro: String?
+            public var version: String?
             public var arch: String?
         }
         public struct OSRelease: Codable, Sendable, Equatable {

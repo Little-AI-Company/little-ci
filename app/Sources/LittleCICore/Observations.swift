@@ -22,6 +22,8 @@ public struct WorkflowRun: Codable, Sendable, Equatable, Identifiable {
 
     public var id: Int
     public var name: String
+    /// Stable per workflow file; two workflows can share a display name.
+    public var workflowId: Int?
     public var event: String
     public var status: String
     public var conclusion: String?

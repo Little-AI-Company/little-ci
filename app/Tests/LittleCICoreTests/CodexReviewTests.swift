@@ -13,7 +13,7 @@ struct CodexReviewTests {
         inventory.hosts.append(HostSpec(id: "vm", name: "VM", kind: .orbstackVM(Self.vm), access: .local, runners: []))
         let config = OrbStackVMFacts.Info.Config(isolated: true, isolateNetwork: true, defaultUsername: "deploy", forwardSSHAgent: false)
         let record = OrbStackVMFacts.Info.Record(name: Self.vm.machine, state: "running",
-                                                 image: .init(distro: "ubuntu", arch: "arm64"), config: config,
+                                                 image: .init(distro: "ubuntu", version: "noble", arch: "arm64"), config: config,
                                                  osRelease: .init(versionID: "24.04"))
         var facts = ProbeFixture("m1-macos").facts(for: "m1")
         facts.virtualMachine = OrbStackVMFacts(machineState: .present, info: .init(record: record), mountsReadable: true, mounts: "", identity: identity)
@@ -152,6 +152,7 @@ struct CodexReviewTests {
 
     @Test("Lifecycle plans start by checking the checkout's config.env against the reviewed values", arguments: [
         ("FLEET_ID=studio", true), ("FLEET_ID=laptop", false), ("FLEET_ID=studio\nRUNNER_USER=admin", false),
+        ("FLEET_ID=studio\nRUNNER_GROUP=other-group", false),
     ])
     func configurationCheck(config: String, matches: Bool) async throws {
         let checkout = FileManager.default.temporaryDirectory.appendingPathComponent("little-ci-check-\(UUID().uuidString)")
@@ -207,5 +208,46 @@ struct CodexReviewTests {
         ]]
         let facts = try ProbeParser.parseOrbStackVM(JSONSerialization.data(withJSONObject: envelope))
         #expect(facts.machineState == expected)
+    }
+
+    @Test("Start, stop and drain are offered only for runners whose .runner names this target and runner")
+    func launchdPlansNeedOwnership() {
+        let m4 = ProbeFixture("m4-macos")
+        let unloaded = m4.section("runner.ci-m4-candidate-1.service").replacingOccurrences(of: "ci-m4-candidate-1", with: "ci-m4-check-2")
+        let snapshot = Fixture.snapshot(online: ["ci-m4-check-1"], busy: ["ci-m4-check-2"])
+        let ours = m4.replacing("runner.ci-m4-check-2.service", with: unloaded, exit: 1)
+        let theirs = ours.replacing("runner.ci-m4-check-2.registration",
+                                    with: "\"agentName\": \"ci-m4-check-2\"\n\"gitHubUrl\": \"https://github.com/someone-else/repo\"")
+        #expect(assess(github: snapshot, hosts: ["m4": ours.observation(for: "m4")]).plan("start.ci-m4-check-2") != nil)
+        let assessment = assess(github: snapshot, hosts: ["m4": theirs.observation(for: "m4")])
+        #expect(assessment.finding("runner.ci-m4-check-2.lost") != nil, "the finding still shows")
+        #expect(assessment.plan("start.ci-m4-check-2") == nil, "but nothing offers to load a service that is not ours")
+    }
+
+    @Test("Two workflows with the same display name do not supersede each other")
+    func workflowIdentity() {
+        func run(_ id: Int, workflow: Int, minutesAgo: Double) -> WorkflowRun {
+            WorkflowRun(id: id, name: "CI", workflowId: workflow, event: "pull_request", status: "queued", conclusion: nil, headBranch: "fix/login",
+                        headRepository: .init(fullName: "example-owner/example-repo"), headSha: String(repeating: "c", count: 40), displayTitle: "fix",
+                        createdAt: Fixture.now.addingTimeInterval(-minutesAgo * 60), runStartedAt: nil, runAttempt: 1, updatedAt: nil,
+                        pullRequests: [], htmlUrl: "https://github.com/example-owner/example-repo/actions/runs/\(id)")
+        }
+        var snapshot = Fixture.snapshot(online: [])
+        snapshot.activeRuns = [run(1, workflow: 10, minutesAgo: 20), run(2, workflow: 11, minutesAgo: 5)]
+        #expect(assess(github: snapshot, hosts: [:]).queue.allSatisfy { !$0.dispositions.contains(.superseded) })
+    }
+
+    @Test("An arm64 24.04 machine that is not the Ubuntu noble image does not match")
+    func imageMustBeNoble() {
+        var (inventory, observation) = vmObservation(identity: Self.identity)
+        if case .reached(var facts) = observation.outcome {
+            facts.virtualMachine?.info?.record.image?.distro = "debian"
+            observation.outcome = .reached(facts)
+        }
+        inventory.queue = Fixture.inventory.queue
+        let assessment = Assessor.assess(FleetObservations(inventory: inventory, github: Fixture.snapshot(online: []), hosts: ["vm": observation]),
+                                         now: Fixture.now)
+        #expect(assessment.finding("vm.vm.identity")?.evidence.contains("image is debian noble, expected ubuntu noble") == true)
+        #expect(assessment.plans.filter { $0.subject == .host("vm") }.isEmpty)
     }
 }

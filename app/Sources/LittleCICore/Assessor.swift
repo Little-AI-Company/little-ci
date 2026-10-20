@@ -113,9 +113,8 @@ public enum Assessor {
             switch host.kind {
             case .macLaunchd:
                 // Retire only a runner whose own registration names this target and this exact runner.
-                plans += host.runners.compactMap { runner in facts.runner(named: runner.name).flatMap { local in
-                    local.registeredURL == inventory.github.registrationURL && local.registeredName == runner.name
-                        ? PlanFactory.retireLaunchdRunner(host, runner.name, inventory: inventory) : nil } }
+                plans += host.runners.compactMap { runner in
+                    owns(facts.runner(named: runner.name), runner.name) ? PlanFactory.retireLaunchdRunner(host, runner.name, inventory: inventory) : nil }
             case .orbstackVM(let vm):
                 switch assessVirtualMachine(host, vm, facts) {
                 case .absent: plans += PlanFactory.lifecyclePlans(host, inventory: inventory, machineExists: false)
@@ -168,12 +167,13 @@ public enum Assessor {
         mutating func assessDocker(_ host: HostSpec, _ facts: HostFacts, runnersOnline: [GitHubRunner]) {
             let fleetCheckRunners = Set(github.map { inventory.checkRunners(in: $0).map(\.name) } ?? [])
             let checkRunnersOnline = runnersOnline.filter { fleetCheckRunners.contains($0.name) }
+            let ownedCheckRunners = checkRunnersOnline.filter { owns(facts.runner(named: $0.name), $0.name) }
             if let orbstack = facts.orbstack, orbstack.dataMountFailed {
                 add(Finding(id: "orbstack.\(host.id).data", severity: .critical, subject: .host(host.id),
                             title: "OrbStack data could not be mounted on \(host.name)",
                             evidence: orbstack.evidence + (orbstack.lastStartAt.map { ["last start \($0)"] } ?? []),
                             suggestedAction: "Open OrbStack and follow its recovery mode; back up what it can still read. Docker and every VM on this Mac stay down until it mounts."),
-                    plans: PlanFactory.drainIdleRunners(host, checkRunnersOnline, reason: "OrbStack's data disk is not mounted"))
+                    plans: PlanFactory.drainIdleRunners(host, ownedCheckRunners, reason: "OrbStack's data disk is not mounted"))
             }
             guard let docker = facts.docker else { return }
             if !docker.isServing {
@@ -188,7 +188,7 @@ public enum Assessor {
                                 title: "Docker is down on \(host.name) while \(checkRunnersOnline.count) check runners take jobs",
                                 evidence: evidence + ["jobs that start a database container fail within seconds"],
                                 suggestedAction: "Start OrbStack, or stop this host's idle check runners until Docker answers."),
-                        plans: PlanFactory.startOrbStack(host) + PlanFactory.drainIdleRunners(host, checkRunnersOnline, reason: "Docker is down"))
+                        plans: PlanFactory.startOrbStack(host) + PlanFactory.drainIdleRunners(host, ownedCheckRunners, reason: "Docker is down"))
                 }
             } else if docker.composeVersion == nil, !checkRunnersOnline.isEmpty {
                 add(Finding(id: "compose.\(host.id)", severity: .critical, subject: .host(host.id),
@@ -196,7 +196,7 @@ public enum Assessor {
                             evidence: ["`docker compose version` failed with the runners' PATH",
                                        "database suites fail with \"unknown shorthand flag: 'f' in -f\""],
                             suggestedAction: "Install the Compose plugin (OrbStack includes it; check the runners' .path finds OrbStack's docker)."),
-                    plans: PlanFactory.drainIdleRunners(host, checkRunnersOnline, reason: "Docker Compose is missing"))
+                    plans: PlanFactory.drainIdleRunners(host, ownedCheckRunners, reason: "Docker Compose is missing"))
             }
         }
 
@@ -237,7 +237,11 @@ public enum Assessor {
             } else {
                 problems.append("orbctl info returned no readable config")
             }
-            if machine.info?.record.image?.arch != "arm64" { problems.append("architecture is not arm64") }
+            let image = machine.info?.record.image
+            if image?.arch != "arm64" { problems.append("architecture is not arm64") }
+            if image?.distro != "ubuntu" || image?.version != "noble" {
+                problems.append("image is \(image?.distro ?? "unknown") \(image?.version ?? "unknown"), expected ubuntu noble")
+            }
             if machine.info?.record.osRelease?.versionID != "24.04" { problems.append("Ubuntu release is not 24.04") }
             if !machine.mountsReadable || !machine.mounts.isEmpty { problems.append("Mac mounts are not empty (\(machine.mounts.isEmpty ? "unreadable" : machine.mounts))") }
             problems += identityProblems(machine.identity, vm)
@@ -271,8 +275,15 @@ public enum Assessor {
 
         // MARK: Runners
 
+        /// The local runner is this fleet's: its `.runner` names this target and this exact runner.
+        /// Plans that start, stop or retire a launchd service require it.
+        func owns(_ local: RunnerServiceFacts?, _ name: String) -> Bool {
+            local?.registeredURL == inventory.github.registrationURL && local?.registeredName == name
+        }
+
         mutating func assess(_ runner: RunnerSpec, on host: HostSpec, facts: HostFacts, mayTakeJobs: Bool) {
             let local = facts.runner(named: runner.name)
+            let owned = owns(local, runner.name)
             let running = local?.service.isRunning ?? false
             guard let github else { return }
             let remote = github.runner(named: runner.name)
@@ -292,13 +303,13 @@ public enum Assessor {
                             title: "GitHub shows \(runner.name) offline and busy; its service is not running",
                             evidence: ["GitHub: offline, busy", "\(host.name): \(Format.service(local?.service))"],
                             suggestedAction: "Its job is lost and will fail. Starting the service reconnects it so GitHub can close the job."),
-                    plans: mayTakeJobs ? PlanFactory.startService(host, runner.name, local: local) : [])
+                    plans: mayTakeJobs && owned ? PlanFactory.startService(host, runner.name, local: local) : [])
             case let remote? where remote.status == .offline && !running && mayTakeJobs:
                 add(Finding(id: "runner.\(runner.name).stopped", severity: .critical, subject: subject,
                             title: "\(runner.name) is stopped",
                             evidence: ["GitHub: offline", "\(host.name): \(Format.service(local?.service))"],
                             suggestedAction: host.lendable ? "Start it, or mark \(host.name) as not lent." : "Start its service."),
-                    plans: PlanFactory.startService(host, runner.name, local: local))
+                    plans: owned ? PlanFactory.startService(host, runner.name, local: local) : [])
             case let remote? where remote.status == .offline && running:
                 add(Finding(id: "runner.\(runner.name).disconnected", severity: .warning, subject: subject,
                             title: "\(runner.name)'s service runs but GitHub shows it offline",
@@ -309,7 +320,7 @@ public enum Assessor {
                             title: "\(runner.name) takes jobs while \(host.name) is not lent",
                             evidence: ["GitHub: online, \(remote.busy ? "busy" : "idle")"],
                             suggestedAction: "Stop it once idle, or mark \(host.name) as lent."),
-                    plans: remote.busy ? [] : PlanFactory.stopService(host, runner.name))
+                    plans: remote.busy || !owned ? [] : PlanFactory.stopService(host, runner.name))
             default:
                 break
             }
@@ -414,7 +425,7 @@ public enum Assessor {
                 var dispositions: [QueueEntry.Disposition] = []
                 let lane = QueueLane.of(run, policy: inventory.queue)
                 if run.event == "pull_request", lane != .main,
-                   runs.contains(where: { $0.id != run.id && $0.name == run.name && $0.headBranch == run.headBranch
+                   runs.contains(where: { $0.id != run.id && $0.workflowId == run.workflowId && $0.name == run.name && $0.headBranch == run.headBranch
                        && $0.headRepository == run.headRepository && $0.createdAt > run.createdAt }) {
                     dispositions.append(.superseded)
                 }
