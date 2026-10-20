@@ -250,4 +250,18 @@ struct CodexReviewTests {
         #expect(assessment.finding("vm.vm.identity")?.evidence.contains("image is debian noble, expected ubuntu noble") == true)
         #expect(assessment.plans.filter { $0.subject == .host("vm") }.isEmpty)
     }
+
+    @Test("A runner that shares only the check label with a declared family gets no delete plan")
+    func staleDeleteNeedsEveryFamilyLabel() {
+        var snapshot = Fixture.snapshot(online: [])
+        snapshot.runners += [
+            GitHubRunner(id: 950, name: "ci-m1-check-7", status: .offline, busy: false,
+                         labels: ["self-hosted", "example-repo-check"].map { .init(name: $0) }),
+            GitHubRunner(id: 951, name: "ci-m1-check-8", status: .offline, busy: false,
+                         labels: ["self-hosted", "example-repo-check", "example-repo-m1"].map { .init(name: $0) }),
+        ]
+        let assessment = assess(github: snapshot, hosts: [:])
+        #expect(assessment.plan("unregister.ci-m1-check-7") == nil)
+        #expect(assessment.plan("unregister.ci-m1-check-8") != nil)
+    }
 }

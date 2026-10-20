@@ -94,6 +94,13 @@ public actor GitHubClient {
         return all
     }
 
+    /// A job's check-run annotations. Some failures (a full disk that stops the log) appear only here.
+    public func jobAnnotations(_ target: GitHubTarget, jobID: Int) async throws -> [String] {
+        struct Annotation: Decodable { var message: String }
+        let annotations: [Annotation] = try await get("\(target.repositoryPath)/check-runs/\(jobID)/annotations?per_page=50")
+        return annotations.map(\.message)
+    }
+
     public func jobLog(_ target: GitHubTarget, jobID: Int) async throws -> String {
         String(decoding: try await request("GET", "\(target.repositoryPath)/actions/jobs/\(jobID)/logs"), as: UTF8.self)
     }

@@ -395,7 +395,7 @@ public enum Assessor {
         }
 
         /// A runner numbered like a declared one (`mac-check-4` next to `mac-check-1`, or a little-ci
-        /// fleet's `<prefix>-<n>`) that also carries one of that family's own labels.
+        /// fleet's `<prefix>-<n>`) that carries every one of that family's own labels, not just a shared one.
         func belongsToDeclaredFamily(_ remote: GitHubRunner) -> Bool {
             let generic: Set<String> = ["self-hosted", "macOS", "Linux", "ARM64", "X64", "little-ci"]
             var families: [(prefix: String, labels: Set<String>)] = []
@@ -412,7 +412,7 @@ public enum Assessor {
             }
             return families.contains { family in
                 remote.name.wholeMatch(of: try! Regex("\(NSRegularExpression.escapedPattern(for: family.prefix))-[0-9]+")) != nil
-                    && !family.labels.isDisjoint(with: remote.labelNames)
+                    && !family.labels.isEmpty && family.labels.isSubset(of: remote.labelNames)
             }
         }
 

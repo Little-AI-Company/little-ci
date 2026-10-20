@@ -202,7 +202,8 @@ public actor FleetMonitor {
                     var failure: FailureClass?
                     if job.conclusion == "failure" {
                         let log = try? await github.jobLog(target, jobID: job.id)
-                        failure = FailureClassifier.classify(job, log: log, context: context(for: job, among: jobs))
+                        let annotations = (try? await github.jobAnnotations(target, jobID: job.id)) ?? []
+                        failure = FailureClassifier.classify(job, log: log, annotations: annotations, context: context(for: job, among: jobs))
                     }
                     entries.append(LedgerEntry(job: job, workflow: run.name, failure: failure))
                 }
