@@ -139,7 +139,7 @@ struct FactsGrid: View {
                 Text("Compose")
                 Text(facts.docker?.composeVersion ?? "missing")
                 Text("observed")
-                Text("\(facts.observedAt, style: .relative) ago\(stale ? " (stale)" : "")")
+                Text(age(facts.observedAt) + (stale ? " (stale)" : ""))
             }
             ForEach(facts.volumes.filter(\.countsForHealth), id: \.mountPoint) { volume in
                 GridRow {
@@ -241,7 +241,7 @@ struct QueuePane: View {
                         GridRow {
                             Text(entry.run.headBranch ?? "?").font(.callout.monospaced()).lineLimit(1)
                             Text(entry.run.status)
-                            Text("\(entry.run.createdAt, style: .relative) ago").monospacedDigit()
+                            Text(age(entry.run.createdAt)).monospacedDigit()
                             Text(entry.dispositions.map(label).joined(separator: ", "))
                             Link("run", destination: URL(string: entry.run.htmlUrl)!)
                         }
@@ -302,7 +302,7 @@ struct PlanReviewWindow: View {
                         Text(command(step.action, plan: plan)).font(.callout.monospaced()).textSelection(.enabled)
                     }
                 }
-                Text("The review expires \(review.reviewedAt.addingTimeInterval(PlanReview.lifetime), style: .relative) from now. If GitHub or the host changed since the review, nothing runs.")
+                Text("The review expires at \(review.reviewedAt.addingTimeInterval(PlanReview.lifetime).formatted(date: .omitted, time: .shortened)). If GitHub or the host changed since the review, nothing runs.")
                     .font(.callout)
                 if plan.requiresSecondConfirmation {
                     Toggle("I checked the names above; this cannot be undone from the app", isOn: $confirmedTwice)
@@ -311,8 +311,8 @@ struct PlanReviewWindow: View {
                     Button("Cancel") { store.review = nil }.keyboardShortcut(.cancelAction)
                     Spacer()
                     if store.runningPlanID == plan.id { ProgressView().controlSize(.small) }
+                    // No default-button shortcut: Return must never run a plan, some of which cannot be undone.
                     Button("Run") { store.run(review) }
-                        .keyboardShortcut(.defaultAction)
                         .disabled(store.runningPlanID != nil || (plan.requiresSecondConfirmation && !confirmedTwice) || store.isDemo)
                 }
                 if let outcome = store.outcome, outcome.planID == plan.id { OutcomeView(outcome: outcome) }

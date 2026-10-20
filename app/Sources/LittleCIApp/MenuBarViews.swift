@@ -34,13 +34,27 @@ struct MenuBarGlyph: View {
     }
 
     @ViewBuilder private var glyph: some View {
-        let worst = store.state?.assessment.worstSeverity
-        let critical = store.state?.assessment.findings.filter { $0.severity == .critical }.count ?? 0
+        let findings = store.state?.assessment.findings ?? []
+        let worst = findings.map(\.severity).max()
+        let critical = findings.filter { $0.severity == .critical }.count
+        // Loaded with nothing above info is "all clear"; only a missing state is "reading".
+        let symbol = switch (store.state, worst) {
+        case (nil, _): store.setupProblem == nil ? "circle.dotted" : "questionmark.circle"
+        case (_, nil), (_, .info?): "checkmark.circle"
+        case (_, let severity?): severity.symbol
+        }
+        let label = switch (store.state, worst) {
+        case (nil, _): store.setupProblem == nil ? "Little CI: reading the fleet" : "Little CI: needs setup"
+        case (_, nil), (_, .info?): "Little CI: all clear"
+        case (_, .warning?): "Little CI: warnings"
+        case (_, .critical?): "Little CI: \(critical) critical"
+        }
         HStack(spacing: 2) {
-            Image(systemName: worst.map { $0 == .info ? "checkmark.circle" : $0.symbol } ?? (store.setupProblem == nil ? "circle.dotted" : "questionmark.circle"))
+            Image(systemName: symbol)
             if critical > 0 { Text("\(critical)").monospacedDigit() }
         }
-        .accessibilityLabel(worst.map { "Little CI: worst finding \($0.rawValue)" } ?? "Little CI")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
     }
 }
 
@@ -55,7 +69,7 @@ struct MenuBarPanel: View {
                 if store.isDemo { Text("DEMO DATA").font(.caption.bold()).foregroundStyle(.orange) }
                 Spacer()
                 if let observed = store.state?.observations.github?.observedAt {
-                    Text("GitHub \(observed, style: .relative) ago").font(.caption).monospacedDigit()
+                    Text("GitHub " + age(observed)).font(.caption).monospacedDigit()
                 }
             }
             if let problem = store.setupProblem {
@@ -159,4 +173,12 @@ struct PlanButton: View {
         }
         .disabled(store.isDemo)
     }
+}
+
+/// "just now" or "3 min. ago", fixed until the view next updates with new state.
+/// (Text's relative style would re-render every second; the formatter writes zero as "in 0 sec.")
+func age(_ date: Date) -> String {
+    let now = Date()
+    guard now.timeIntervalSince(date) >= 60 else { return "just now" }
+    return date.formatted(.relative(presentation: .numeric, unitsStyle: .abbreviated))
 }
