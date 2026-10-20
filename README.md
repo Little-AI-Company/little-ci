@@ -775,16 +775,9 @@ Docker fails with a permission error:
 
 ## Development
 
-Run the repository's local checks before opening a pull request:
-
-```bash
-bash -n ./*.sh lib/*.sh tests/*.sh
-./tests/run.sh
-shellcheck ./*.sh lib/*.sh tests/*.sh
-```
-
-ShellCheck is optional for users but expected for contributors when installed.
-See [AGENTS.md](AGENTS.md) for project boundaries and live-runner safety rules.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, required checks, and pull
+request expectations. See [AGENTS.md](AGENTS.md) for project boundaries and
+live-runner safety rules.
 
 ## Attribution and license
 
