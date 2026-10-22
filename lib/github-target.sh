@@ -45,6 +45,7 @@ github_target_init() {
         return 1
       fi
       GITHUB_TARGET="${BASH_REMATCH[1]}"
+      # shellcheck disable=SC2034 # read by the scripts that source this file
       GITHUB_API_TARGET="/orgs/$GITHUB_TARGET"
       ;;
   esac

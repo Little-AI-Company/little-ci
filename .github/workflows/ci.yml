@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One group per pull request, or per commit on main. A new push cancels the older pull request run;
+# runs on main always finish, so every merged commit gets a result.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scripts:
+    name: Scripts
+    # GitHub-hosted, never a Little-CI runner: pull requests from forks run here too.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check syntax
+        run: bash -n ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh
+      - name: ShellCheck
+        run: |
+          shellcheck --version
+          shellcheck --severity=warning ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh
+      - name: Run tests
+        run: ./tests/run.sh
+
+  app:
+    name: Menu bar app
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Run tests
+        run: swift test --package-path app
+
+  check:
+    name: Check
+    # The one status to require. A skipped or cancelled job reports success to branch protection,
+    # so this job runs in every case and fails unless each job succeeded.
+    if: always()
+    needs: [scripts, app]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "A required job ended with: $result"
+              exit 1
+            fi
+          done

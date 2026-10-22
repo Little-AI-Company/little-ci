@@ -4,6 +4,9 @@
 
 # Little-CI
 
+[![Check](https://github.com/Little-AI-Company/little-ci/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Little-AI-Company/little-ci/actions/workflows/ci.yml)
+[![MIT license](https://img.shields.io/github/license/Little-AI-Company/little-ci)](LICENSE)
+
 Your Mac can run your CI. Little-CI turns an Apple Silicon Mac into a small fleet
 of GitHub Actions runners. Your jobs run on hardware you already own, with caches
 that stay warm between runs and no per-minute bill.
@@ -784,7 +787,8 @@ applies. Build, setup and safety rules: [app/README.md](app/README.md).
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, required checks, and pull
-request expectations. See [AGENTS.md](AGENTS.md) for project boundaries and
+request expectations. The **Check** workflow runs the script tests, ShellCheck,
+and the app tests on every pull request. See [AGENTS.md](AGENTS.md) for project boundaries and
 live-runner safety rules.
 
 ## Attribution and license

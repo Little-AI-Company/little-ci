@@ -1733,6 +1733,7 @@ test_orbstack_uninstall_forwards_remove_token_and_cleans_matching_stale_runner()
   new_sandbox
   install_gh_mock
   install_orbctl_machine_mock
+  install_uname_mock arm64
 
   local output status
   set +e
