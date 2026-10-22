@@ -88,8 +88,7 @@ validate_existing_machine() {
 }
 
 wait_until_ready() {
-  local attempt
-  for attempt in $(seq 1 90); do
+  for _ in $(seq 1 90); do
     if orbctl run -m "$ORB_MACHINE" -u root true 2>/dev/null; then
       return 0
     fi

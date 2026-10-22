@@ -29,7 +29,7 @@ The tests mock commands at the process boundary, so they need no OrbStack machin
 GitHub token, or runner registration.
 
 ```bash
-git clone https://github.com/ParkerRex/little-ci.git
+git clone https://github.com/Little-AI-Company/little-ci.git
 cd little-ci
 bash -n ./*.sh lib/*.sh tests/*.sh
 ./tests/run.sh
@@ -37,6 +37,12 @@ shellcheck ./*.sh lib/*.sh tests/*.sh
 ```
 
 `./tests/run.sh` must end with 0 failures. Do not add new ShellCheck findings.
+Run the tests as a regular user, not root: several scripts refuse to run as root
+by design. Run `swift test --package-path app` when you change `app/`.
+
+The **Check** status runs these on every pull request and push to `main`, on
+GitHub-hosted runners: syntax, ShellCheck at warning severity, and the test suite
+on Ubuntu 24.04, and the app tests on macOS 15. Check must pass before a merge.
 
 ## Verification expectations
 
