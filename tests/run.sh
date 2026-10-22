@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# Each test sets the configuration it needs. Clear the config.env contract so the
+# caller's environment cannot leak in: GitHub Actions exports RUNNER_ARCH=X64.
+unset EXPECTED_RUNNERS FLEET_ID GITHUB_SCOPE GITHUB_URL ORB_CPUS ORB_DISK ORB_MACHINE \
+  ORB_MEMORY PG_DB PG_MAX_CONNECTIONS PG_PASSWORD PG_SHARED_BUFFERS PG_USER REAP_AGE \
+  REMOVE_LEGACY_SWAPFILES RUNNER_ARCH RUNNER_COUNT RUNNER_GROUP RUNNER_LABELS \
+  RUNNER_NAME_PREFIX RUNNER_USER RUNNER_VERSION SWAPPINESS SWAP_GB
+
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 test_count=0
 failure_count=0
