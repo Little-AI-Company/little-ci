@@ -80,7 +80,7 @@ access if workflows build or run containers.
 Clone Little-CI and create the local configuration:
 
 ```bash
-git clone https://github.com/ParkerRex/little-ci.git
+git clone https://github.com/Little-AI-Company/little-ci.git
 cd little-ci
 cp config.env.example config.env
 $EDITOR config.env

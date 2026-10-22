@@ -6,7 +6,7 @@ hardware, so security reports matter here.
 ## Report a vulnerability
 
 Report it privately through
-[GitHub security advisories](https://github.com/ParkerRex/little-ci/security/advisories/new).
+[GitHub security advisories](https://github.com/Little-AI-Company/little-ci/security/advisories/new).
 Do not open a public issue. Include the affected script, the configuration
 needed to reproduce it, and what an attacker gains.
 

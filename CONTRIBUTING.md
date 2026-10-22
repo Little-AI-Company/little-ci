@@ -29,7 +29,7 @@ The tests mock commands at the process boundary, so they need no OrbStack machin
 GitHub token, or runner registration.
 
 ```bash
-git clone https://github.com/ParkerRex/little-ci.git
+git clone https://github.com/Little-AI-Company/little-ci.git
 cd little-ci
 bash -n ./*.sh lib/*.sh tests/*.sh
 ./tests/run.sh
