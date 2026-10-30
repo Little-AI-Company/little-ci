@@ -6,8 +6,9 @@ reproduction and the commands you ran.
 ## Before changing code
 
 Open an issue first for a new platform, a new setting, or a change to the
-security model. Small fixes with a clear scope can go straight to a pull request.
-Check open issues and pull requests for the same fix before you start.
+security model. Small fixes with a clear scope can go straight to a pull request
+from your fork. Check open issues and pull requests for the same fix before you
+start.
 
 Read [AGENTS.md](AGENTS.md) before changing architecture. It holds the live-runner
 safety rules, the configuration contract, and which script owns what. These are
@@ -31,18 +32,21 @@ GitHub token, or runner registration.
 ```bash
 git clone https://github.com/Little-AI-Company/little-ci.git
 cd little-ci
-bash -n ./*.sh lib/*.sh tests/*.sh
+bash -n ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh scripts/*.sh
+shellcheck --severity=warning ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh scripts/*.sh
 ./tests/run.sh
-shellcheck ./*.sh lib/*.sh tests/*.sh
 ```
 
 `./tests/run.sh` must end with 0 failures. Do not add new ShellCheck findings.
 Run the tests as a regular user, not root: several scripts refuse to run as root
 by design. Run `swift test --package-path app` when you change `app/`.
 
-The **Check** status runs these on every pull request and push to `main`, on
-GitHub-hosted runners: syntax, ShellCheck at warning severity, and the test suite
-on Ubuntu 24.04, and the app tests on macOS 15. Check must pass before a merge.
+Maintainers land work by committing on `main` and running
+`scripts/push_main.sh`, which runs these checks on the exact commit and pushes
+it ([Push to main](docs/push-main.md)). The **CI** workflow repeats them on
+GitHub-hosted runners after each push to `main`: syntax, ShellCheck and the test
+suite on Ubuntu 24.04, and the app tests on macOS 15. Pull requests get no
+automatic run; a maintainer runs the checks when landing one.
 
 ## Verification expectations
 
@@ -62,6 +66,10 @@ a check, skip a scenario, or delete a test to get green.
 
 ## Pull requests
 
+Maintainers push to `main` directly; there are no branches here. If you do not
+have push access, open a pull request from your fork; a maintainer reads it and
+lands it on `main` as one commit with you as its author.
+
 - One change per pull request. Keep dependency bumps, formatting, and refactors
   out of fixes.
 - Use a conventional, lowercase title, for example
@@ -76,4 +84,4 @@ Never include registration or removal tokens, PATs, `config.env`, `.runner`,
 directory is a live credential.
 
 AI-assisted work is welcome. You are responsible for every line, so read the full
-diff before you open the pull request.
+diff before you open the pull request or push.

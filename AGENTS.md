@@ -11,6 +11,31 @@ Keep changes small, explicit, and safe around live runners. Prefer the existing
 Bash and Python standard-library toolchain. Do not add dependencies without a
 clear requirement.
 
+## Shipping on main
+
+Work lands on `main`. There are no branches, pull request reviews or required
+checks in this repository (Parker, 2026-10-30: "we're gonna do this ... all of
+it"). Commit on `main`, then run `scripts/push_main.sh`: it rebases onto
+`origin/main`, runs syntax, ShellCheck and `./tests/run.sh` (and
+`swift test --package-path app` when `app/` changed and Swift is installed) on
+the exact commit, writes `Tested:` trailers naming the tree that passed, and
+pushes. [Push to main](docs/push-main.md) has the options, exit codes and how
+to land an outside contributor's pull request.
+
+- One commit per push, with a `type(scope): summary` subject (`feat`, `fix`,
+  `perf`, `docs`, `chore`, `refactor`, `test`). Read every line of the diff
+  before you push.
+- Never push `main` another way, never write a `Tested:` line by hand, and
+  never force-push or amend a pushed commit.
+- A red `main` is fixed or reverted within the hour by whoever pushed it:
+  `scripts/push_main.sh --revert <sha>`. Nobody waits for anyone, including
+  the `ci.yml` run after the push.
+- A change to a script that mutates live runners or machines also needs a live
+  run on a machine you own before it is pushed, or the commit body says it was
+  not run live.
+- Only Parker changes the `main` ruleset (no deletion, no force-push, linear
+  history; no required status and no pull request rule).
+
 ## Architecture and execution boundaries
 
 Mac-side orchestration:
@@ -122,7 +147,9 @@ Use domain-specific names. Avoid placeholders such as `data`, `handler`, `temp`,
 - Shell variables local to a function: lowercase and descriptive.
 - Exported/configuration variables: uppercase snake case.
 - Functions: lowercase snake case beginning with a clear verb.
-- Scripts: lowercase kebab case describing the operation and target.
+- Scripts: lowercase kebab case describing the operation and target. The one
+  exception is `scripts/push_main.sh`, named like its copies in the other
+  Little repositories so one command lands work everywhere.
 - Runner fleet input: stable lowercase `FLEET_ID`.
 - Runner fleets: derived, target-and-fleet-unique `RUNNER_NAME_PREFIX`.
 - Runner instances: `<prefix>-<number>`.
@@ -249,18 +276,17 @@ return nonzero when the fleet is unhealthy.
 
 ## Tests
 
-Run before commit:
+`scripts/push_main.sh` runs these on the commit it pushes. Run them yourself
+while you work:
 
 ```bash
-bash -n ./*.sh lib/*.sh tests/*.sh
+bash -n ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh scripts/*.sh
+shellcheck --severity=warning ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh scripts/*.sh
 ./tests/run.sh
 ```
 
-Also run ShellCheck when available:
-
-```bash
-shellcheck ./*.sh lib/*.sh tests/*.sh
-```
+Run `./tests/run.sh` as a regular user; several scripts refuse root. As root,
+use `runuser -u nobody -- env HOME=/tmp ./tests/run.sh`.
 
 Tests must not require a live OrbStack machine, GitHub token, or runner
 registration. Mock commands at the process boundary and cover:
