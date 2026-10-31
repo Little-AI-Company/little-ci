@@ -153,7 +153,7 @@ check_scripts() {
 
   say "bash -n and shellcheck on ${#files[@]} scripts"
   code=0
-  run_capped "$CHECK_CAP_SECONDS" "$work_dir/syntax.log" bash -n "${files[@]}" || code=$?
+  run_capped "$CHECK_CAP_SECONDS" "$work_dir/syntax.log" bash -c 'status=0; for script; do bash -n "$script" || status=1; done; exit "$status"' bash "${files[@]}" || code=$?
   [ "$code" -ne 124 ] || capped="$capped bash -n"
   [ "$code" -eq 0 ] || [ "$code" -eq 124 ] || SCRIPTS_RESULT=fail
   code=0
