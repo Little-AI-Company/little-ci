@@ -51,6 +51,21 @@ with an older sentence anywhere in this repository, this section wins.
   completion signal or a test clock. A flaky test is fixed or deleted, never
   retried or given a longer timeout.
 - Doubles only at a process, network, clock, filesystem or keychain boundary.
+- Never write these tests, even when a test was asked for, unless the person
+  named that kind. They fail on a refactor and pass through a real regression:
+  - Snapshot or golden-file tests of generated output.
+  - Exhaustive permutations: many cases of inputs that take the same path.
+  - Mock choreography: asserting which doubles were called, in what order or
+    with what arguments.
+  - Declaration checks: that a type, constant, export, enum case, route, flag
+    or config key exists or equals its own literal.
+  - Wrapper tests that repeat what a stronger request, API, feature,
+    end-to-end or owner-level test already covers.
+- A test earns its place only when it can catch a product regression that no
+  other check catches. The kinds that do: security, state machines, parsers
+  and decoders, persistence and migrations, compatibility of stored data and
+  APIs, billing and money, and boundary contracts. When cutting tests, judge
+  each one against that bar, never against a target count.
 
 ### Comments
 

@@ -7,7 +7,9 @@ This file adds no rules of its own.
 
 - Never add a new code comment.
 - Never write a new unit or integration test unless explicitly asked. New
-  coverage is an end-to-end check.
+  coverage is an end-to-end check. Never write snapshot, exhaustive
+  permutation, mock choreography, declaration check or wrapper tests unless
+  that kind is asked for by name.
 
 Both are in [AGENTS.md: Rules for every agent](AGENTS.md#rules-for-every-agent)
 with what they allow.
