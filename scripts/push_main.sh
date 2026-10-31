@@ -1,59 +1,20 @@
 #!/usr/bin/env bash
-# Check one commit and fast-forward main with it (docs/push-main.md). There
-# are no pull requests or branches here (Parker, 2026-10-30); this is how a
-# maintainer's or agent's commit reaches main. Same interface as
-# little-logbook's and little-worker's scripts/push_main.sh.
-#
-#   scripts/push_main.sh                  # push the one commit ahead of origin/main
-#   scripts/push_main.sh --revert <sha>   # revert a commit on main and push that
-#   scripts/push_main.sh --dry-run        # check HEAD, change and push nothing
-#   scripts/push_main.sh --skip-checks "<why>"   # push without running any check
-#
-# It refuses a dirty tree, fetches origin/main, rebases the commit onto it,
-# and runs this repository's checks on that exact commit: bash -n and
-# ShellCheck (warning severity) on every script, tests/run.sh (as nobody
-# when run as root, because several scripts refuse root), and
-# `swift test --package-path app` when app/ changed. The app tests run here on
-# a Mac with Swift; otherwise (Linux, a cloud session) on the M4 over `ssh m4`:
-# the commit is uploaded as a tarball, run detached with nohup, and polled with
-# short ssh calls, so no ssh session stays open for the whole run. Without
-# `ssh m4` it warns and records `not-run`; it never blocks the push.
-#
-# No check runs longer than 10 minutes (PUSH_MAIN_CAP_SECONDS=600). On the cap
-# it ends the check, warns, records `not-run` and pushes anyway.
-#
-# It writes the results as Tested: trailers, which change the message but
-# not the tree they name:
-#
-#   Tested: scripts pass (syntax, shellcheck, 127 tests) tree 3f2a9c1d7e0b
-#   Tested: app pass (swift test, m4, macOS 26.7.2, Xcode 27.1, 41s) tree 3f2a9c1d7e0b
-#   Tested: app not-run (no swift here, ssh m4 unavailable) tree 3f2a9c1d7e0b
-#
-# --skip-checks "<why>" runs none of them and writes one trailer instead,
-# `Tested: skipped: <why>`, so the history says the commit was not checked.
-#
-# Then it runs `git push origin <sha>:main`. When main moved meanwhile it
-# fetches, rebases, checks again and retries (3 tries).
-#
-# Progress goes to standard error. The last line on standard output is
-# "PUSH: <state> <sha>", and the exit code says what to do next:
-#   0  pushed (or checked, with --dry-run)
-#   1  usage, a missing tool, or a git error
-#   2  a check failed (main is unchanged)
-#   3  the rebase conflicts (it is aborted and the commit left as it was)
-#   4  main kept moving for 3 tries
-#   5  not pushable: dirty tree, nothing to push, or more than one commit
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# No check runs longer than this; on the cap the script warns and pushes anyway.
 CHECK_CAP_SECONDS="${PUSH_MAIN_CAP_SECONDS:-600}"
-# Without Swift here, the app tests run on this host (`ssh m4`).
 M4_HOST="${PUSH_MAIN_M4:-m4}"
 M4_POLL_SECONDS="${PUSH_MAIN_M4_POLL_SECONDS:-10}"
 M4_DIR=""
+
+COMMENT_RULES=(
+  '*.sh' '^[[:space:]]*#'
+  '*.swift' '^[[:space:]]*(//|/[*]|[*]([[:space:]/]|$))'
+)
+COMMENT_EXCLUDE=(':!.agents/' ':!.claude/' ':!examples/' ':!config.env.example')
+COMMENT_DIRECTIVE='^[[:space:]]*(#!|# shellcheck (disable|source)=|// MARK:|// swift-tools-version)'
 
 say() { echo "push-main: $*" >&2; }
 finish() {
@@ -64,7 +25,24 @@ finish() {
 }
 
 usage() {
-  sed -n '7,10p' "$0" | sed 's/^# \{0,1\}//' >&2
+  cat >&2 <<'USAGE'
+Check one commit and fast-forward main with it (docs/push-main.md).
+
+  scripts/push_main.sh                         push the one commit ahead of origin/main
+  scripts/push_main.sh --revert <sha>          revert a commit on main and push that
+  scripts/push_main.sh --dry-run               check HEAD, change and push nothing
+  scripts/push_main.sh --skip-checks "<why>"   push without running any check
+
+Progress goes to standard error. The last line on standard output is
+"PUSH: <state> <sha>", and the exit code says what to do next:
+  0  pushed (or checked, with --dry-run)
+  1  usage, a missing tool, or a git error
+  2  a check failed (main is unchanged)
+  3  the rebase conflicts (it is aborted and the commit left as it was)
+  4  main kept moving for 3 tries
+  5  not pushable: dirty tree, nothing to push, more than one commit, or the
+     commit adds comment lines to code files
+USAGE
   exit 1
 }
 
@@ -137,10 +115,6 @@ shell_files() {
   done
 }
 
-# Runs a command with its output in a log, and ends it (and everything it
-# started) when it is still running after the cap. Returns its exit code, or
-# 124 on the cap.
-#   run_capped <seconds> <log> <command...>
 run_capped() {
   local cap="$1" log="$2" pid waited=0 code=0
   shift 2
@@ -161,13 +135,10 @@ run_capped() {
   return "$code"
 }
 
-# Sets TESTS_COMMAND to the command that runs tests/run.sh.
 tests_command() {
   if [ "$(id -u)" -ne 0 ]; then
     TESTS_COMMAND=(./tests/run.sh)
   elif command -v runuser >/dev/null 2>&1; then
-    # A cloud session runs as root. The checkout must be readable by nobody;
-    # the tests write only to their own sandbox under /tmp.
     TESTS_COMMAND=(runuser -u nobody -- env HOME=/tmp TMPDIR=/tmp ./tests/run.sh)
   else
     echo "tests/run.sh must not run as root, and runuser is missing" >&2
@@ -175,8 +146,6 @@ tests_command() {
   fi
 }
 
-# Syntax, ShellCheck and tests/run.sh on HEAD. Sets SCRIPTS_RESULT (pass, fail
-# or capped) and SCRIPTS_DETAIL.
 check_scripts() {
   local files code count capped="" no_tests=0
   mapfile -t files < <(shell_files)
@@ -222,9 +191,6 @@ check_scripts() {
   fi
 }
 
-# The job the M4 runs for the app tests. It is started detached (nohup, its own
-# process group) and the pusher polls it with short ssh calls, so no ssh session
-# stays open for the whole run. Its own watchdog ends it if nobody collects it.
 m4_job_script() {
   cat <<JOB
 export PATH="/opt/homebrew/bin:/usr/local/bin:\$PATH"
@@ -243,7 +209,6 @@ JOB
 
 m4_ssh() { ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 "$M4_HOST" "$@"; }
 
-# Ends the job and removes this run's scratch directory on the M4.
 m4_cleanup() {
   [ -n "$M4_DIR" ] || return 0
   m4_ssh "p=\$(cat '$M4_DIR/job.pid' 2>/dev/null || true); [ -z \"\$p\" ] || kill -TERM -- \"-\$p\" 2>/dev/null || true; sleep 1; rm -rf '$M4_DIR'; rmdir .push-main 2>/dev/null || true" \
@@ -251,9 +216,6 @@ m4_cleanup() {
   M4_DIR=""
 }
 
-# Runs `swift test --package-path app` on the M4 for HEAD. Returns 0 (passed),
-# 1 (failed), 124 (cap) or 125 (the M4 could not be used; nothing was tested).
-# Leaves the log in $work_dir/app.log and the host in M4_HOSTINFO.
 app_tests_on_m4() {
   local sha started polls_failed=0 state remote
   sha="$(git rev-parse HEAD)"
@@ -316,8 +278,6 @@ m4_fetch_log() {
   M4_HOSTINFO="$(sed -n 's/^HOSTINFO //p' "$work_dir/app.log" | head -1 | tr -d '()')"
 }
 
-# Adds the app's Tested: line (when app/ changed) to TESTED and fails STATE
-# when the tests fail.
 check_app() {
   local tree="$1" code=0 where started=$SECONDS
   git diff --name-only origin/main HEAD | grep -q '^app/' || return 0
@@ -358,7 +318,42 @@ check_app() {
   say "${TESTED[-1]#Tested: }"
 }
 
-# Sets TESTED (trailer lines) and STATE for HEAD.
+comment_count() {
+  local rev="$1" i
+  for ((i = 0; i < ${#COMMENT_RULES[@]}; i += 2)); do
+    git grep -h -I -E -e "${COMMENT_RULES[i + 1]}" "$rev" -- "${COMMENT_RULES[i]}" "${COMMENT_EXCLUDE[@]}" || true
+  done | grep -c -v -E "$COMMENT_DIRECTIVE" || true
+}
+
+new_comment_lines() {
+  local i
+  for ((i = 0; i < ${#COMMENT_RULES[@]}; i += 2)); do
+    git diff -U0 --no-color --no-ext-diff origin/main HEAD -- "${COMMENT_RULES[i]}" "${COMMENT_EXCLUDE[@]}" |
+      awk -v comment="${COMMENT_RULES[i + 1]}" -v directive="$COMMENT_DIRECTIVE" '
+        /^\+\+\+ / { file = substr($0, 7); next }
+        /^@@ / { split($3, start, ","); line = substr(start[1], 2) + 0; next }
+        /^\+/ {
+          text = substr($0, 2)
+          if (text ~ comment && text !~ directive) print file ":" line ": " text
+          line++
+        }
+      '
+  done
+}
+
+comment_ratchet() {
+  local before after
+  before="$(comment_count origin/main)"
+  after="$(comment_count HEAD)"
+  if [ "$after" -le "$before" ]; then
+    say "comment lines in code files: $before on origin/main, $after here"
+    return 0
+  fi
+  say "comment lines in code files rose from $before on origin/main to $after; new ones:"
+  new_comment_lines >&2
+  finish 5 "comments-rose $(git rev-parse HEAD) - : remove the new comment lines (AGENTS.md, Comments) and amend"
+}
+
 run_checks() {
   local tree
   tree="$(git rev-parse --short=12 'HEAD^{tree}')"
@@ -370,6 +365,7 @@ run_checks() {
     return 0
   fi
 
+  comment_ratchet
   check_scripts
   case "$SCRIPTS_RESULT" in
     pass | fail) TESTED+=("Tested: scripts $SCRIPTS_RESULT ($SCRIPTS_DETAIL) tree $tree") ;;

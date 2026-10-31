@@ -17,7 +17,9 @@ repository (Parker, 2026-10-30). Maintainers and their agents commit on `main`
 and land the commit with `scripts/push_main.sh`. It is the small version of
 little-worker's
 [Push to main](https://github.com/Little-AI-Company/little-worker/blob/main/docs/push-main.md):
-no commit status, no required check, no proof loop.
+no commit status, no required check, no proof loop. Its interface (options,
+`PUSH:` line, exit codes) is the same as little-logbook's and little-worker's
+`scripts/push_main.sh`.
 
 ## Landing a change
 
@@ -34,7 +36,9 @@ The script:
    ahead of it. Squash several with `git reset --soft origin/main && git commit`.
 2. Rebases that commit onto `origin/main`. A conflict aborts the rebase and
    exits 3.
-3. Runs the checks on that exact commit:
+3. Refuses the commit with exit 5 when it raises the number of comment lines
+   in code files (see [Comment ratchet](#comment-ratchet)).
+4. Runs the checks on that exact commit:
    - `bash -n` and `shellcheck --severity=warning` on `./*.sh`, `lib/*.sh`,
      `tests/*.sh`, `app/scripts/*.sh` and `scripts/*.sh`;
    - `./tests/run.sh`. As root (a cloud session) it runs the suite as
@@ -52,10 +56,11 @@ The script:
 
    No check runs longer than 10 minutes (`PUSH_MAIN_CAP_SECONDS`, default
    600). On the cap it ends the check, warns, records `not-run` and pushes
-   anyway.
-4. Writes the results as `Tested:` trailers. They change the message, not the
+   anyway. The job on the M4 has its own watchdog, which ends it a little
+   after the cap if nobody collects it.
+5. Writes the results as `Tested:` trailers. They change the message, not the
    tree, so the tree they name is the tree that was checked.
-5. Runs `git push origin <sha>:main`. When `main` moved, it fetches, rebases,
+6. Runs `git push origin <sha>:main`. When `main` moved, it fetches, rebases,
    checks again and retries, 3 tries in all.
 
 ShellCheck must be on `PATH`: `brew install shellcheck`, `apt install
@@ -65,16 +70,42 @@ Options:
 
 - `--dry-run` checks `HEAD` and pushes nothing.
 - `--revert <sha>` reverts a commit on main and pushes that (see Reverting).
-- `--skip-checks "<why>"` runs no check and records `Tested: skipped: <why>`.
+- `--skip-checks "<why>"` runs no check, not even the comment ratchet, and
+  records `Tested: skipped: <why>`.
+
+Any other argument, or an option without its value, prints the usage and the
+exit codes and exits 1.
+
+## Comment ratchet
+
+Code comments are banned (Parker, 2026-10-31; AGENTS.md, Comments). Before the
+checks, the script counts comment lines in the code files of `origin/main`'s
+tree and of the commit's tree with the same rule. When the count rose, it
+prints each new comment line as `file:line: text`, taken from the added lines
+of `git diff origin/main HEAD`, and stops with
+`PUSH: comments-rose <sha>` and exit 5. Remove the lines, amend, run again.
+
+- Code files: `*.sh` and `*.swift`, outside `.agents/`, `.claude/`,
+  `examples/` and `config.env.example` (user documentation that keeps its
+  explanations).
+- A comment line is a full line that starts, after spaces, with `#` in shell,
+  or with `//`, `/*`, or `*` followed by a space, `/` or the end of the line
+  in Swift. Trailing comments are not counted.
+- Directives are not comments and are not counted: `#!` lines,
+  `# shellcheck disable=` and `# shellcheck source=`, `// MARK:` and
+  `// swift-tools-version`.
+- Only a rise counts, so a commit that moves or rewords a comment, or removes
+  some, passes. Lines in `tests/run.sh` heredocs that write fixture files (a
+  `#` line in a deb822 fixture, say) count on both sides and never trip it.
 
 ## Trailers
 
 ```
-Tested: scripts pass (syntax, shellcheck, 127 tests) tree 3f2a9c1d7e0b
+Tested: scripts pass (syntax, shellcheck, 122 tests) tree 3f2a9c1d7e0b
 Tested: app pass (swift test) tree 3f2a9c1d7e0b
 Tested: app pass (swift test, m4, macOS 26.7.2, Xcode 27.1, 41s) tree 3f2a9c1d7e0b
 Tested: app not-run (no swift here, ssh m4 unavailable) tree 3f2a9c1d7e0b
-Tested: skipped: the change is a typo in a comment
+Tested: skipped: the change is a typo in the README
 ```
 
 Only the script writes `Tested:` lines; it replaces any it finds. Result lines
@@ -120,7 +151,8 @@ pull request with a link to the commit on `main`.
 
 ## Exit codes
 
-The last line on standard output is `PUSH: <state> <sha>`.
+Progress goes to standard error. The last line on standard output is
+`PUSH: <state> <sha>`, and the exit code says what to do next.
 
 | Code | Meaning | Next |
 |---|---|---|
@@ -129,7 +161,7 @@ The last line on standard output is `PUSH: <state> <sha>`.
 | 2 | a check failed; main is unchanged | fix the cause, amend, run again |
 | 3 | rebase conflict; the rebase was aborted | rebase by hand, run again |
 | 4 | main moved on every try | run again |
-| 5 | not pushable: dirty tree, nothing to push, several commits | fix the commit, run again |
+| 5 | not pushable: dirty tree, nothing to push, several commits, or the commit adds comment lines (`comments-rose`) | fix the commit, run again |
 
 ## The main ruleset
 
