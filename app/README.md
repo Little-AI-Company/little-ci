@@ -113,8 +113,19 @@ disabled while it is on.
 "app/build/Little CI.app/Contents/MacOS/LittleCI" probe m1
 ```
 
-Prints one host's probe facts as JSON (`--raw` for the probe's own output). Use it to compare the
-app's facts with `df`, `docker info` and `launchctl print` run by hand.
+Prints one host's probe facts as JSON (`--raw` for the probe's own output, `--power-log` to
+include the macOS power log). Use it to compare the app's facts with `df`, `docker info` and
+`launchctl print` run by hand. With no subcommand, the menu bar app starts.
+
+Launch flags for reproducible screenshots (the crit skill uses them). None of them changes the
+fleet:
+
+- `--show-details`: open the details window at launch.
+- `--show-panel`: also show the menu bar panel's content in a plain window, so it can be captured
+  without clicking the menu bar.
+- `--pane <name>`: `overview`, `hosts`, `runners`, `queue` or `events`.
+- `--demo`: start with demo data.
+- `--appearance <mode>`: `light` or `dark`.
 
 ## Tests
 
