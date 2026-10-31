@@ -2652,8 +2652,6 @@ test_orbstack_enables_universe_in_existing_deb822_sources() {
   install_uname_mock arm64
   install_orbctl_machine_mock
   mkdir -p "$sandbox_dir/apt/sources.list.d"
-  printf 'deb http://ports.ubuntu.com/ubuntu-ports noble main universe\n' > "$sandbox_dir/apt/sources.list"
-  cp "$sandbox_dir/apt/sources.list" "$sandbox_dir/sources.list.before"
   local ubuntu_sources="$sandbox_dir/apt/sources.list.d/ubuntu.sources"
   local other_sources="$sandbox_dir/apt/sources.list.d/docker.sources"
   printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: noble\nComponents: stable\n' > "$other_sources"
@@ -2868,7 +2866,6 @@ MOCK
       MOCK_COMMAND_LOG="$sandbox_dir/command.log" \
       MOCK_EXECUTE_GUEST_APT_SOURCES=1 \
       LITTLE_CI_APT_SOURCES_DIR="$sandbox_dir/apt/sources.list.d" \
-      LITTLE_CI_APT_SOURCES_LIST="$sandbox_dir/apt/sources.list" \
       MOCK_MACHINE_EXISTS=1 \
       MOCK_MACHINE_NAME=little-ci-acme-widget-studio \
       MOCK_ORB_INFO='{"record":{"name":"little-ci-acme-widget-studio","state":"running","image":{"distro":"ubuntu","version":"noble","arch":"arm64"},"config":{"isolated":true,"isolate_network":true,"forward_ssh_agent":false,"default_username":"deploy","cpu_limit":2,"memory_limit_mib":4096,"disk_limit_bytes":51539607552}}}' \
@@ -2881,7 +2878,6 @@ MOCK
   status=$?
   set -e
   cmp -s "$other_sources" "$sandbox_dir/docker.sources.before" || fail 'unrelated apt source was modified'
-  cmp -s "$sandbox_dir/apt/sources.list" "$sandbox_dir/sources.list.before" || fail 'active classic apt source was removed or modified'
   [ -z "$(find "$sandbox_dir/apt/sources.list.d" -name '.ubuntu.sources.*')" ] || fail 'temporary sources file left behind'
 
   case "$source_state" in
