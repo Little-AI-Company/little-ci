@@ -142,7 +142,10 @@ done
 tmpfiles_policy="/etc/tmpfiles.d/little-ci-${RUNNER_NAME_PREFIX}-scratch.conf"
 printf '%s\n' "$reaper_config" > "$tmpfiles_policy"
 
-systemd-tmpfiles --create "$tmpfiles_policy" 2>/dev/null || true
+systemd-tmpfiles --create "$tmpfiles_policy" || {
+  echo "systemd-tmpfiles could not apply $tmpfiles_policy, so the scratch reaper may not be in force; fix the policy (check REAP_AGE) and rerun provision-box.sh" >&2
+  exit 1
+}
 
 echo "== done =="
 swapon --show
