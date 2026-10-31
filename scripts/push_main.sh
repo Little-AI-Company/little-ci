@@ -7,6 +7,7 @@
 #   scripts/push_main.sh                  # push the one commit ahead of origin/main
 #   scripts/push_main.sh --revert <sha>   # revert a commit on main and push that
 #   scripts/push_main.sh --dry-run        # check HEAD, change and push nothing
+#   scripts/push_main.sh --skip-checks "<why>"   # push without running any check
 #
 # It refuses a dirty tree, fetches origin/main, rebases the commit onto it,
 # and runs this repository's checks on that exact commit: bash -n and
@@ -18,6 +19,9 @@
 #
 #   Tested: scripts pass (syntax, shellcheck, 127 tests) tree 3f2a9c1d7e0b
 #   Tested: app not-run (no swift; ci.yml runs it on main) tree 3f2a9c1d7e0b
+#
+# --skip-checks "<why>" runs none of them and writes one trailer instead,
+# `Tested: skipped: <why>`, so the history says the commit was not checked.
 #
 # Then it runs `git push origin <sha>:main`. When main moved meanwhile it
 # fetches, rebases, checks again and retries (3 tries).
@@ -44,12 +48,14 @@ finish() {
 }
 
 usage() {
-  sed -n '7,9p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '7,10p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 1
 }
 
 revert=""
 dry_run=0
+skip_checks=0
+skip_why=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --revert)
@@ -58,14 +64,24 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --dry-run) dry_run=1 ;;
+    --skip-checks)
+      [ $# -ge 2 ] || usage
+      skip_checks=1
+      skip_why="$2"
+      shift
+      ;;
     *) usage ;;
   esac
   shift
 done
 [ -z "$revert" ] || [ "$dry_run" -eq 0 ] || usage
-
-command -v shellcheck >/dev/null 2>&1 ||
-  finish 1 "no-shellcheck - : install it (brew install shellcheck, apt install shellcheck, or pip install shellcheck-py)"
+if [ "$skip_checks" -eq 1 ]; then
+  [ -n "${skip_why//[[:space:]]/}" ] && [[ "$skip_why" != *$'\n'* ]] ||
+    finish 1 "usage - : --skip-checks needs a one-line reason"
+else
+  command -v shellcheck >/dev/null 2>&1 ||
+    finish 1 "no-shellcheck - : install it (brew install shellcheck, apt install shellcheck, or pip install shellcheck-py)"
+fi
 
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/push-main.XXXXXX")"
 trap 'rm -rf "$work_dir"' EXIT
@@ -123,6 +139,11 @@ run_checks() {
   tree="$(git rev-parse --short=12 'HEAD^{tree}')"
   TESTED=()
   STATE=success
+  if [ "$skip_checks" -eq 1 ]; then
+    TESTED+=("Tested: skipped: $skip_why")
+    say "checks skipped: $skip_why"
+    return 0
+  fi
   mapfile -t files < <(shell_files)
 
   result=pass
