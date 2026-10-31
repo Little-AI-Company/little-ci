@@ -44,6 +44,7 @@ extension Dictionary: SchemaDictionary where Key == String, Value: Decodable {
 /// Builds JSON Schemas by decoding each model with a decoder that records what it asks for: every key,
 /// whether it is required (`decode`) or optional (`decodeIfPresent`), and each value's type.
 public final class SchemaGenerator {
+    private static let placeholderWhileRecording: JSONValue = .object([:])
     public private(set) var components: [String: JSONValue] = [:]
 
     public init() {}
@@ -64,7 +65,7 @@ public final class SchemaGenerator {
         }
         let name = Self.name(of: type)
         if components[name] == nil {
-            components[name] = .object([:])  // placeholder while the type is being recorded
+            components[name] = Self.placeholderWhileRecording
             if let described = type as? any SchemaDescribed.Type {
                 components[name] = described.jsonSchema(self)
             } else {
