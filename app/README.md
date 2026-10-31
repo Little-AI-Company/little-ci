@@ -122,5 +122,8 @@ app's facts with `df`, `docker info` and `launchctl print` run by hand.
 swift test --package-path app
 ```
 
+`scripts/push_main.sh` runs this when a commit touches `app/` and there is no workflow that runs
+it after the push: on this Mac if it has Swift, otherwise on the M4 over `ssh m4`.
+
 The tests replay the 2026-10-20 incidents from recorded output (`Tests/LittleCICoreTests/Fixtures`)
 and check the plan safety rules and the API contract. They contact no host and no GitHub API.

@@ -17,10 +17,11 @@ Work lands on `main`. There are no branches, pull request reviews or required
 checks in this repository (Parker, 2026-10-30: "we're gonna do this ... all of
 it"). Commit on `main`, then run `scripts/push_main.sh`: it rebases onto
 `origin/main`, runs syntax, ShellCheck and `./tests/run.sh` (and
-`swift test --package-path app` when `app/` changed and Swift is installed) on
-the exact commit, writes `Tested:` trailers naming the tree that passed, and
-pushes. [Push to main](docs/push-main.md) has the options, exit codes and how
-to land an outside contributor's pull request.
+`swift test --package-path app` when `app/` changed, on the M4 over `ssh m4`
+when this machine has no Swift) on the exact commit, writes `Tested:` trailers
+naming the tree that passed, and pushes. No check runs after the push; the
+script is the only one. [Push to main](docs/push-main.md) has the options,
+exit codes and how to land an outside contributor's pull request.
 
 - One commit per push, with a `type(scope): summary` subject (`feat`, `fix`,
   `perf`, `docs`, `chore`, `refactor`, `test`). Read every line of the diff
@@ -28,8 +29,7 @@ to land an outside contributor's pull request.
 - Never push `main` another way, never write a `Tested:` line by hand, and
   never force-push or amend a pushed commit.
 - A red `main` is fixed or reverted within the hour by whoever pushed it:
-  `scripts/push_main.sh --revert <sha>`. Nobody waits for anyone, including
-  the `ci.yml` run after the push.
+  `scripts/push_main.sh --revert <sha>`. Nobody waits for anyone.
 - A change to a script that mutates live runners or machines also needs a live
   run on a machine you own before it is pushed, or the commit body says it was
   not run live.
@@ -86,7 +86,8 @@ Mac menu bar app (`app/`, Swift 6, SwiftPM):
   as an argument, environment value on a command line, log line or API field.
 - This repository is public: test fixtures are excerpts of recorded output with private host,
   user, repository and branch names replaced (`app/Tests/LittleCICoreTests/Fixtures/README.md`).
-- Run `swift test --package-path app` when changing `app/`.
+- Run `swift test --package-path app` when changing `app/`. `scripts/push_main.sh` runs it
+  for you, on the M4 over `ssh m4` when you have no Swift.
 - `examples/` contains opt-in consuming-project workflows, not workflows that
   operate this repository automatically.
 

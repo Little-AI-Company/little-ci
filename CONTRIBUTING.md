@@ -43,10 +43,9 @@ by design. Run `swift test --package-path app` when you change `app/`.
 
 Maintainers land work by committing on `main` and running
 `scripts/push_main.sh`, which runs these checks on the exact commit and pushes
-it ([Push to main](docs/push-main.md)). The **CI** workflow repeats them on
-GitHub-hosted runners after each push to `main`: syntax, ShellCheck and the test
-suite on Ubuntu 24.04, and the app tests on macOS 15. Pull requests get no
-automatic run; a maintainer runs the checks when landing one.
+it ([Push to main](docs/push-main.md)). Nothing runs after the push: this
+repository has no CI workflow. Pull requests get no automatic run; a maintainer
+runs the checks when landing one.
 
 ## Verification expectations
 

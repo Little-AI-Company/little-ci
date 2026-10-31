@@ -1,6 +1,6 @@
 ---
 title: "Push to main"
-summary: "How a change lands in Little-CI: scripts/push_main.sh checks one commit (syntax, ShellCheck, tests, app tests), writes Tested: trailers for the tree that passed, and fast-forwards main."
+summary: "How a change lands in Little-CI: scripts/push_main.sh checks one commit (syntax, ShellCheck, tests, app tests, on the M4 when there is no Swift), writes Tested: trailers for the tree that passed, and fast-forwards main."
 docType: "guide"
 status: "active"
 read_when:
@@ -40,9 +40,16 @@ The script:
    - `./tests/run.sh`. As root (a cloud session) it runs the suite as
      `nobody`, because several scripts refuse root by design; the checkout
      must be readable by `nobody`;
-   - `swift test --package-path app` when the commit touches `app/` and Swift
-     is installed. Without Swift (Linux, cloud) it records `not-run`, and the
-     macOS job in `ci.yml` runs the app tests after the push.
+   - `swift test --package-path app` when the commit touches `app/`. On a Mac
+     with Swift it runs there. Without Swift (Linux, a cloud session) it runs
+     on the M4 over `ssh m4`: the commit goes up as a tarball, the job runs
+     detached with `nohup` in a scratch directory, the script polls it with
+     short ssh calls and removes the directory afterwards. If `ssh m4` is
+     unavailable it warns and records `not-run`; it does not block the push.
+
+   No check runs longer than 10 minutes (`PUSH_MAIN_CAP_SECONDS`, default
+   600). On the cap it ends the check, warns, records `not-run` and pushes
+   anyway.
 4. Writes the results as `Tested:` trailers. They change the message, not the
    tree, so the tree they name is the tree that was checked.
 5. Runs `git push origin <sha>:main`. When `main` moved, it fetches, rebases,
@@ -51,18 +58,29 @@ The script:
 ShellCheck must be on `PATH`: `brew install shellcheck`, `apt install
 shellcheck`, or `pip install shellcheck-py` into a virtual environment.
 
+Options:
+
+- `--dry-run` checks `HEAD` and pushes nothing.
+- `--revert <sha>` reverts a commit on main and pushes that (see Reverting).
+- `--skip-checks "<why>"` runs no check and records `Tested: skipped: <why>`.
+
 ## Trailers
 
 ```
 Tested: scripts pass (syntax, shellcheck, 127 tests) tree 3f2a9c1d7e0b
 Tested: app pass (swift test) tree 3f2a9c1d7e0b
-Tested: app not-run (no swift; ci.yml runs it on main) tree 3f2a9c1d7e0b
+Tested: app pass (swift test, m4, macOS 26.7.2, Xcode 27.1, 41s) tree 3f2a9c1d7e0b
+Tested: app not-run (no swift here, ssh m4 unavailable) tree 3f2a9c1d7e0b
+Tested: skipped: the change is a typo in a comment
 ```
 
-Only the script writes `Tested:` lines; it replaces any it finds. The format
-matches little-worker's:
+Only the script writes `Tested:` lines; it replaces any it finds. Result lines
+match little-worker's format:
 `^Tested: (\S+) (pass|fail|skipped|not-run)(?: \(([^)]*)\))? tree ([0-9a-f]{12,40})$`.
-This repository has no changelog, so commits need no `Customer-note:`.
+`--skip-checks "<why>"` is the exception: it skips every check and writes the
+single line `Tested: skipped: <why>`, with no tree. Use it only when a check
+cannot say anything about the change, and say why. This repository has no
+changelog, so commits need no `Customer-note:`.
 
 ## Reverting
 
@@ -76,9 +94,10 @@ it. Nobody waits for anyone.
 
 ## After the push
 
-`.github/workflows/ci.yml` runs the same checks on GitHub-hosted runners for
-every push to `main`, including the app tests on macOS 15. Nothing waits for
-it, and no rule requires it. A red run means the pusher fixes or reverts.
+Nothing runs. This repository has no GitHub Actions workflow of its own, so
+`scripts/push_main.sh` is the only check, and the `Tested:` trailers are the
+record of what it ran. If a bad commit gets through anyway, the pusher fixes
+or reverts it (see Reverting).
 
 ## Outside contributors
 

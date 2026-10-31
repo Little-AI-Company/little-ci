@@ -4,7 +4,6 @@
 
 # Little-CI
 
-[![CI](https://github.com/Little-AI-Company/little-ci/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Little-AI-Company/little-ci/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/github/license/Little-AI-Company/little-ci)](LICENSE)
 
 Your Mac can run your CI. Little-CI turns an Apple Silicon Mac into a small fleet
@@ -789,9 +788,9 @@ applies. Build, setup and safety rules: [app/README.md](app/README.md).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks, and pull request
 expectations. Maintainers commit on `main` and land each commit with
 `scripts/push_main.sh`, which runs the script tests, ShellCheck, and the app
-tests on that commit ([Push to main](docs/push-main.md)); the **CI** workflow
-repeats them after each push. See [AGENTS.md](AGENTS.md) for project boundaries
-and live-runner safety rules.
+tests on that commit before it pushes ([Push to main](docs/push-main.md)). This
+repository has no CI workflow of its own. See [AGENTS.md](AGENTS.md) for project
+boundaries and live-runner safety rules.
 
 ## Attribution and license
 
