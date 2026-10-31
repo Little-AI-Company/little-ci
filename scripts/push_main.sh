@@ -178,7 +178,7 @@ tests_command() {
 # Syntax, ShellCheck and tests/run.sh on HEAD. Sets SCRIPTS_RESULT (pass, fail
 # or capped) and SCRIPTS_DETAIL.
 check_scripts() {
-  local files code count capped=""
+  local files code count capped="" no_tests=0
   mapfile -t files < <(shell_files)
   SCRIPTS_RESULT=pass
 
@@ -192,12 +192,18 @@ check_scripts() {
   [ "$code" -ne 124 ] || capped="$capped shellcheck"
   [ "$code" -eq 0 ] || [ "$code" -eq 124 ] || SCRIPTS_RESULT=fail
 
-  say "running tests/run.sh"
   code=0
-  if tests_command; then
-    run_capped "$CHECK_CAP_SECONDS" "$work_dir/tests.log" "${TESTS_COMMAND[@]}" || code=$?
+  : >"$work_dir/tests.log"
+  if [ ! -f tests/run.sh ]; then
+    say "no tests/run.sh; skipping the tests"
+    no_tests=1
   else
-    code=1
+    say "running tests/run.sh"
+    if tests_command; then
+      run_capped "$CHECK_CAP_SECONDS" "$work_dir/tests.log" "${TESTS_COMMAND[@]}" || code=$?
+    else
+      code=1
+    fi
   fi
   [ "$code" -ne 124 ] || capped="$capped tests/run.sh"
   [ "$code" -eq 0 ] || [ "$code" -eq 124 ] || SCRIPTS_RESULT=fail
@@ -205,6 +211,7 @@ check_scripts() {
   count="$(sed -nE 's/^([0-9]+) tests, ([0-9]+) failures$/\1 tests, \2 failures/p' "$work_dir/tests.log" 2>/dev/null | tail -1)"
   SCRIPTS_DETAIL="syntax, shellcheck, ${count:-no test count}"
   SCRIPTS_DETAIL="${SCRIPTS_DETAIL/, 0 failures/}"
+  [ "$no_tests" -eq 0 ] || SCRIPTS_DETAIL="syntax, shellcheck, no tests/run.sh"
   if [ "$SCRIPTS_RESULT" = fail ]; then
     cat "$work_dir/syntax.log" "$work_dir/shellcheck.log" >&2
     grep -E 'FAIL|^    ' "$work_dir/tests.log" | tail -30 >&2 || tail -30 "$work_dir/tests.log" >&2
@@ -314,6 +321,11 @@ m4_fetch_log() {
 check_app() {
   local tree="$1" code=0 where started=$SECONDS
   git diff --name-only origin/main HEAD | grep -q '^app/' || return 0
+  if [ ! -d app/Tests ]; then
+    say "no app/Tests; skipping the app tests"
+    TESTED+=("Tested: app not-run (no app/Tests) tree $tree")
+    return 0
+  fi
 
   if [ "$(uname -s)" = Darwin ] && command -v swift >/dev/null 2>&1; then
     say "running swift test --package-path app"

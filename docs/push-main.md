@@ -47,6 +47,9 @@ The script:
      short ssh calls and removes the directory afterwards. If `ssh m4` is
      unavailable it warns and records `not-run`; it does not block the push.
 
+   A step whose files are gone (no `tests/run.sh`, no `app/Tests`) is skipped
+   with a note on standard error instead of failing.
+
    No check runs longer than 10 minutes (`PUSH_MAIN_CAP_SECONDS`, default
    600). On the cap it ends the check, warns, records `not-run` and pushes
    anyway.
