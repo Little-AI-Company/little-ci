@@ -89,8 +89,13 @@ script is in the [README](../README.md) and the [app README](../app/README.md).
 - The temp file gets the original's mode (and owner, as root) with `cp -p`, then
   awk rewrites its contents. `cp -p` works on GNU and BSD, unlike
   `chown --reference`, so the test suite can run this on a Mac.
-- `LITTLE_CI_APT_SOURCES_DIR` and `LITTLE_CI_APT_SOURCES_LIST` are test hooks
-  only; `orbctl` does not forward the Mac environment into the guest.
+- `LITTLE_CI_APT_SOURCES_DIR` and `LITTLE_CI_NEEDRESTART_CONF_DIR` are test
+  hooks only; `orbctl` does not forward the Mac environment into the guest.
+- `wait_until_ready` polls `orbctl run -m <machine> -u root true` every 2 s,
+  for at most 180 s, after the machine is created or started, and fails with
+  the machine name when it never answers. No replacement was tried: none of the
+  machines reachable on 2026-10-31 has OrbStack, so a change could not be run
+  live.
 - Docker group membership is root-equivalent, so the runner user gets Docker
   access for container jobs and loses its sudo grant.
 
