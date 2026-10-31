@@ -11,30 +11,116 @@ Keep changes small, explicit, and safe around live runners. Prefer the existing
 Bash and Python standard-library toolchain. Do not add dependencies without a
 clear requirement.
 
+## Rules for every agent
+
+These rules apply to every agent and every person here. Parker set them on
+2026-10-31 for the move to trunk-based development. When one of them conflicts
+with an older sentence anywhere in this repository, this section wins.
+
+### Code
+
+- Build what the task needs now, not what it might need later.
+- When you delete code, leave no trace of it: no shim, wrapper, `_unused`
+  rename, "removed" note, or test that it stays deleted.
+- Leave style to ShellCheck and the existing layout. Do not reflow, reorder or
+  rename lines the change does not need.
+- To learn how a dependency behaves (OrbStack, the Actions runner, `gh`,
+  systemd), read its source (the tool's repo cloned under `/tmp`), not only its
+  docs.
+- Scratch files go in `/tmp`, never beside the code.
+- Never edit a policy, baseline, threshold or allowance to silence a failing
+  check.
+
+### Tests
+
+- Never write a new unit test or integration test unless the person explicitly
+  asked for that test. You may write a new end-to-end or system-level test:
+  `tests/run.sh` end-to-end against a disposable runner or VM, or a live run on
+  a machine you own.
+- Integration tests stay only where they were asked for: the `tests/run.sh`
+  scripts that guard provisioning, the runner lifecycle and live-machine
+  safety, and the `app/Tests` plan-safety, failure classifier and Codex review
+  parser tests against recorded fixtures.
+- When a change breaks an existing test, fix it, or delete it when an
+  end-to-end check, ShellCheck or the Swift compiler already covers what it
+  checked. Delete a test that no longer protects anything.
+- A test checks behaviour through the code's real interface. It never reads
+  source, docs or config text to look for words, and never asserts wiring,
+  call order or that the code mirrors the implementation.
+- A test never waits on a timer or a sleep. It waits on the event, a
+  completion signal or a test clock. A flaky test is fixed or deleted, never
+  retried or given a longer timeout.
+- Doubles only at a process, network, clock, filesystem or keychain boundary.
+
+### Comments
+
+- Never add a new code comment. Put the why in a name, a function, a test,
+  the commit message, or [docs/decisions.md](docs/decisions.md) for a
+  decision. Existing comments are being removed; never add one back to a file
+  you touch.
+- A directive a tool reads is not a comment and stays: shebangs,
+  `# shellcheck disable=SCnnnn`, `# shellcheck source=`, Swift `// MARK:` and
+  `// swift-tools-version`. `config.env.example` and `examples/` are user
+  documentation, not code, and keep their explanations.
+- Doc comments (Swift `///`, shell file headers) are comments too. A script
+  that prints its own header as `--help` gets a `usage()` heredoc instead.
+
+### Documents and writing
+
+- A plan, crit, review, research or decision record is a page on the HQ wiki
+  (`Little-AI-Company/little-worker-hq`), never a Claude Doc or artifact as
+  the record. A follow-up found during work becomes a roadmap item there the
+  same day, not a line left in chat.
+- Plain words. No em dashes. No jargon without saying what it is. One thing
+  has one name everywhere.
+- Never on your own: send, publish, post, spend, release to users or contact
+  anyone. Agents propose; Parker acts. Never print or commit a key, token or
+  credential.
+- Heavy work (`swift test`, an app build) runs on the M4, never by hand on
+  Parker's M1. From a cloud session, reach it with little-worker's
+  `scripts/m4-ssh-setup.sh`, then `ssh m4`.
+
 ## Shipping on main
 
-Work lands on `main`. There are no branches, pull request reviews or required
-checks in this repository (Parker, 2026-10-30: "we're gonna do this ... all of
-it"). Commit on `main`, then run `scripts/push_main.sh`: it rebases onto
-`origin/main`, runs syntax, ShellCheck and `./tests/run.sh` (and
-`swift test --package-path app` when `app/` changed, on the M4 over `ssh m4`
-when this machine has no Swift) on the exact commit, writes `Tested:` trailers
-naming the tree that passed, and pushes. No check runs after the push; the
-script is the only one. [Push to main](docs/push-main.md) has the options,
-exit codes and how to land an outside contributor's pull request.
+Everyone, human or agent, commits straight to `main`. There are no pull
+requests, branches, stacks, batch landings, release freezes or CI gates
+(Parker, 2026-10-31). Two people and their agents work here and the product
+has no users yet, so a bad commit costs one revert and a gate costs every
+commit its wait. We revert instead of adding gates.
 
-- One commit per push, with a `type(scope): summary` subject (`feat`, `fix`,
-  `perf`, `docs`, `chore`, `refactor`, `test`). Read every line of the diff
-  before you push.
-- Never push `main` another way, never write a `Tested:` line by hand, and
-  never force-push or amend a pushed commit.
-- A red `main` is fixed or reverted within the hour by whoever pushed it:
-  `scripts/push_main.sh --revert <sha>`. Nobody waits for anyone.
+- One commit, one purpose, landed in the same session that wrote it. Split big
+  work into commits that each stand alone. A thread never holds more than a
+  few hours of unpushed work.
+- Every commit leaves `main` releasable. Unfinished work that must land ships
+  inert, as a script not yet called by `install-runners.sh` or a routine.
+- Commit on a detached `origin/main` or a worktree of it. Never push a branch.
+  A branch the harness creates for a session stays local.
+- Use `type(scope): summary` subjects (`feat`, `fix`, `perf`, `docs`, `chore`,
+  `refactor`, `test`); the body says what changed and why.
+- Read every line of the diff before you push. Passing checks do not replace
+  reading it.
+- Push only with `scripts/push_main.sh`. It rebases onto `origin/main`, runs
+  syntax, ShellCheck and `./tests/run.sh` (and `swift test --package-path app`
+  when `app/` changed, on the M4 over `ssh m4` when this machine has no Swift)
+  on the exact commit (ten minutes at most per check), writes `Tested:`
+  trailers naming the tree that passed, and pushes, retrying when `main`
+  moved. `--skip-checks "<why>"` is always allowed and always recorded. Never
+  write a `Tested:` line by hand, never push `main` another way, never
+  force-push, amend or rewrite a pushed commit.
+  [Push to main](docs/push-main.md) has the options and exit codes.
+- After the push nobody waits; nothing checks `main` but the live runners. A
+  red `main` is fixed forward or reverted within the hour by whoever pushed
+  it, and by whoever sees it when the author is gone after 30 minutes:
+  `scripts/push_main.sh --revert <sha>`. Nobody asks first. A rerun that
+  passes with no code change is a flaky test to fix, not a pass.
 - A change to a script that mutates live runners or machines also needs a live
   run on a machine you own before it is pushed, or the commit body says it was
   not run live.
 - Only Parker changes the `main` ruleset (no deletion, no force-push, linear
-  history; no required status and no pull request rule).
+  history, no required status) and repository settings.
+- A pull request from a fork is read as a proposal, landed as one commit with
+  the push script and a `Co-authored-by:` trailer, then closed with a link to
+  the commit.
 
 ## Architecture and execution boundaries
 
@@ -115,9 +201,8 @@ with fallback behavior.
 
 When adding or changing a setting:
 
-- Update `config.env.example` and its comment.
+- Update `config.env.example` and its explanation there.
 - Update the README configuration reference and affected commands.
-- Add focused tests for defaults, valid variants, and invalid boundaries.
 - Preserve repository and organization behavior unless the change deliberately
   narrows scope.
 
@@ -275,7 +360,7 @@ Do not swallow failures from registration, unregistration, service management, o
 state validation. A read-only diagnostic may report multiple failures, but must
 return nonzero when the fleet is unhealthy.
 
-## Tests
+## Running the tests
 
 `scripts/push_main.sh` runs these on the commit it pushes. Run them yourself
 while you work:
@@ -289,25 +374,12 @@ shellcheck --severity=warning ./*.sh lib/*.sh tests/*.sh app/scripts/*.sh script
 Run `./tests/run.sh` as a regular user; several scripts refuse root. As root,
 use `runuser -u nobody -- env HOME=/tmp ./tests/run.sh`.
 
-Tests must not require a live OrbStack machine, GitHub token, or runner
-registration. Mock commands at the process boundary and cover:
-
-- repository and organization API routing;
-- URL and scope validation;
-- target-derived default names and explicit names;
-- arm64 OrbStack enforcement;
-- existing-machine compatibility rejection;
-- protected machine identity and no-mount/no-SSH-forward checks;
-- OrbStack swap skipping and normal-Linux swap behavior;
-- fleet-specific scratch, authoritative service drop-ins, and selected cleanup;
-- protected pending-cleanup creation, retry, and malformed-state rejection;
-- fleet-specific pagination and missing/offline/busy states;
-- no-replace install, label/group drift, automatic self-update, unregister, and
-  partial-failure recovery paths;
-- secret non-disclosure.
-
-Live smoke tests are supplemental and require an explicit target. Never point a
-test at an arbitrary machine or GitHub organization discovered from local state.
+`tests/run.sh` and `app/Tests` are the kept list in
+[Rules for every agent: Tests](#tests), not a pattern to grow. They need no
+live OrbStack machine, GitHub token or runner registration, and mock commands
+only at the process boundary. A live run needs an explicit target: never point
+one at an arbitrary machine or GitHub organization discovered from local
+state.
 
 ## Documentation
 
