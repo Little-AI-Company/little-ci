@@ -1,6 +1,5 @@
 import Foundation
 
-/// A JSON value, for schemas and the API's index document.
 public enum JSONValue: Codable, Sendable, Equatable {
     case string(String), number(Double), bool(Bool), array([JSONValue]), object([String: JSONValue]), null
 
@@ -27,10 +26,8 @@ public enum JSONValue: Codable, Sendable, Equatable {
     }
 }
 
-/// String enums list their values in the schema.
 public protocol SchemaEnum: CaseIterable, RawRepresentable, Decodable where RawValue == String {}
 
-/// Types whose Codable form is hand-written (enums with payloads, single-value types) state their schema here.
 public protocol SchemaDescribed: Decodable {
     static func jsonSchema(_ generator: SchemaGenerator) -> JSONValue
     static var schemaExample: Self { get }
@@ -41,8 +38,6 @@ extension Dictionary: SchemaDictionary where Key == String, Value: Decodable {
     static var valueType: any Decodable.Type { Value.self }
 }
 
-/// Builds JSON Schemas by decoding each model with a decoder that records what it asks for: every key,
-/// whether it is required (`decode`) or optional (`decodeIfPresent`), and each value's type.
 public final class SchemaGenerator {
     private static let placeholderWhileRecording: JSONValue = .object([:])
     public private(set) var components: [String: JSONValue] = [:]
@@ -77,7 +72,6 @@ public final class SchemaGenerator {
         return .object(["$ref": .string("#/components/schemas/\(name)")])
     }
 
-    /// An instance to hand back to the model's initializer while recording.
     func example<Value: Decodable>(_ type: Value.Type) throws -> Value {
         _ = schema(for: type)
         let primitives: [Any] = ["", 0, Int64(0), Int32(0), 0.0, false, Date(timeIntervalSince1970: 0), UUID()]
@@ -147,7 +141,6 @@ private struct KeyedRecorder<Key: CodingKey>: KeyedDecodingContainerProtocol {
         return nil
     }
 
-    // The protocol's default versions of these call `decode`, which would mark the key required.
     func decodeIfPresent(_ type: Bool.Type, forKey key: Key) throws -> Bool? { try optional(type, key) }
     func decodeIfPresent(_ type: String.Type, forKey key: Key) throws -> String? { try optional(type, key) }
     func decodeIfPresent(_ type: Double.Type, forKey key: Key) throws -> Double? { try optional(type, key) }
@@ -219,7 +212,6 @@ private struct SingleRecorder: SingleValueDecodingContainer {
 extension JSONValue {
     static func oneOf(_ choices: [JSONValue]) -> JSONValue { .object(["oneOf": .array(choices)]) }
 
-    /// `{"<case>": { ...payload }}`, the form Swift synthesizes for enums with associated values.
     static func tagged(_ cases: [String: JSONValue]) -> JSONValue {
         .oneOf(cases.sorted { $0.key < $1.key }.map { name, payload in
             .object(["type": .string("object"), "required": .array([.string(name)]),

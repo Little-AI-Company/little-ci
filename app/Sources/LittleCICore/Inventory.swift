@@ -1,7 +1,5 @@
 import Foundation
 
-/// The desired fleet: which GitHub target, which hosts, which runners, which targets.
-/// Loaded from `inventory.json`; every value is validated before any observation runs.
 public struct Inventory: Codable, Sendable, Equatable {
     public var github: GitHubTarget
     public var hosts: [HostSpec]
@@ -24,7 +22,6 @@ public struct Inventory: Codable, Sendable, Equatable {
 
     public func host(_ id: HostSpec.ID) -> HostSpec? { hosts.first { $0.id == id } }
 
-    /// The host that declares a runner of this exact name.
     public func host(ofRunner name: String) -> HostSpec? {
         hosts.first { host in host.runners.contains { $0.name == name } }
     }
@@ -52,7 +49,6 @@ public struct Inventory: Codable, Sendable, Equatable {
         }
     }
 
-    /// Every value that reaches a shell command is checked here, so a typo cannot become shell code.
     func validateKind(of host: HostSpec) throws {
         func require(_ value: String, _ pattern: Regex<Substring>, _ field: String) throws {
             guard value.wholeMatch(of: pattern) != nil else {
@@ -69,7 +65,6 @@ public struct Inventory: Codable, Sendable, Equatable {
             guard let parent = hosts.first(where: { $0.id == vm.parentHost }) else {
                 throw InventoryError.invalid("host \(host.id) names parent host \(vm.parentHost), which is not in the inventory")
             }
-            // little-ci's OrbStack wrappers run on the Mac that owns the VM, which must be this Mac.
             guard parent.access == .local, case .macLaunchd = parent.kind else {
                 throw InventoryError.invalid("host \(host.id): an OrbStack VM's parent host must be this Mac (access \"local\")")
             }
@@ -87,7 +82,6 @@ public struct Inventory: Codable, Sendable, Equatable {
 }
 
 extension HostSpec {
-    /// The account the runners run as.
     var runnerUser: String {
         switch kind {
         case .macLaunchd(let mac): mac.user
@@ -104,15 +98,12 @@ public enum InventoryError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// The GitHub repository or organization whose runners this fleet serves.
 public struct GitHubTarget: Codable, Sendable, Equatable {
     public enum Scope: String, Codable, Sendable, CaseIterable { case repository, organization }
 
     public var scope: Scope
     public var owner: String
-    /// The repository: the runner target in repository scope, the watched repository in organization scope.
     public var repository: String
-    /// Required in organization scope, rejected in repository scope.
     public var runnerGroup: String?
 
     public init(scope: Scope, owner: String, repository: String, runnerGroup: String? = nil) {
@@ -123,14 +114,12 @@ public struct GitHubTarget: Codable, Sendable, Equatable {
     }
 
     public var repositoryPath: String { "repos/\(owner)/\(repository)" }
-    /// The URL a runner registered to this target records in its `.runner` file.
     public var registrationURL: String {
         switch scope {
         case .repository: "https://github.com/\(owner)/\(repository)"
         case .organization: "https://github.com/\(owner)"
         }
     }
-    /// Where runners, registration and removal tokens live for this scope.
     public var runnersPath: String {
         switch scope {
         case .repository: "\(repositoryPath)/actions/runners"
@@ -158,9 +147,7 @@ public struct HostSpec: Codable, Sendable, Equatable, Identifiable {
     public var name: String
     public var kind: HostKind
     public var access: HostAccess
-    /// A lendable host takes CI only while lent; while not lent the app refuses to start its runners.
     public var lendable: Bool
-    /// Most jobs this host should run at once, when it has a limit (M4: 2).
     public var maxConcurrentJobs: Int?
     public var runners: [RunnerSpec]
 
@@ -186,13 +173,9 @@ public struct RunnerSpec: Codable, Sendable, Equatable {
     }
 }
 
-/// How a host runs its runners. The VM layer is one case, so another VM provider is one more case.
 public enum HostKind: Codable, Sendable, Equatable {
-    /// A Mac with native launchd agents: `<serviceLabelPrefix><name>`, `<runnerRoot>/<name>/.env` and `.path`.
     case macLaunchd(MacLaunchdHost)
-    /// A Linux VM on a Mac, provisioned by little-ci (identity file, scratch, reaper).
     case orbstackVM(OrbStackVMHost)
-    /// A remote Linux server with systemd units, provisioned by little-ci.
     case linuxServer(LinuxServerHost)
 
     private enum CodingKeys: String, CodingKey { case type }
@@ -232,14 +215,10 @@ public struct MacLaunchdHost: Codable, Sendable, Equatable {
 }
 
 public struct OrbStackVMHost: Codable, Sendable, Equatable {
-    /// The Mac host that runs the VM.
     public var parentHost: String
     public var machine: String
-    /// little-ci's `RUNNER_USER` inside the guest.
     public var runnerUser: String
-    /// little-ci's derived runner prefix for this fleet.
     public var fleetPrefix: String
-    /// A little-ci checkout on the parent Mac whose `config.env` describes this fleet.
     public var littleCICheckout: String
 
     public init(parentHost: String, machine: String, runnerUser: String, fleetPrefix: String, littleCICheckout: String) {
@@ -254,7 +233,6 @@ public struct OrbStackVMHost: Codable, Sendable, Equatable {
 public struct LinuxServerHost: Codable, Sendable, Equatable {
     public var runnerUser: String
     public var fleetPrefix: String
-    /// A little-ci checkout on the server whose `config.env` describes this fleet.
     public var littleCICheckout: String
 
     public init(runnerUser: String, fleetPrefix: String, littleCICheckout: String) {
@@ -264,7 +242,6 @@ public struct LinuxServerHost: Codable, Sendable, Equatable {
     }
 }
 
-/// How this Mac reaches a host: run locally, or over OpenSSH in batch mode.
 public enum HostAccess: Codable, Sendable, Equatable, CustomStringConvertible {
     case local
     case ssh(destination: String)
@@ -274,7 +251,6 @@ public enum HostAccess: Codable, Sendable, Equatable, CustomStringConvertible {
         if text == "local" {
             self = .local
         } else if text.hasPrefix("ssh:"), let destination = Optional(String(text.dropFirst(4))),
-                  // A leading "-" would be read by ssh as an option.
                   destination.wholeMatch(of: /[A-Za-z0-9_][A-Za-z0-9._-]*(@[A-Za-z0-9][A-Za-z0-9._-]*)?/) != nil {
             self = .ssh(destination: destination)
         } else {
@@ -296,7 +272,6 @@ public enum HostAccess: Codable, Sendable, Equatable, CustomStringConvertible {
     }
 }
 
-/// Targets from the Phase 1 report. Each is checked against measured values.
 public struct ServiceLevelTargets: Codable, Sendable, Equatable {
     public var queueWaitMedianSeconds: Double = 120
     public var queueWaitP90Seconds: Double = 900
@@ -307,13 +282,9 @@ public struct ServiceLevelTargets: Codable, Sendable, Equatable {
     public init() {}
 }
 
-/// How the queue pane groups runs, and which runs need a second confirmation to cancel.
 public struct QueuePolicy: Codable, Sendable, Equatable {
-    /// Branch name prefixes of platform and parity work (cancelling these needs an extra confirmation).
     public var platformBranchPrefixes: [String] = ["platform", "parity"]
-    /// Branch name prefixes of performance lanes.
     public var performanceBranchPrefixes: [String] = ["webapp-perf", "desktop-perf", "iphone-perf", "perf/"]
-    /// The workflow whose runs and jobs make up the check pool.
     public var checkWorkflow: String = "CI"
     public var checkLabel: String = "little-ci"
 

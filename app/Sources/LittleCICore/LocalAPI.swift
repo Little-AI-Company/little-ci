@@ -39,7 +39,6 @@ public struct APIResponse: Sendable, Equatable {
     public var body: Data
 }
 
-/// Routes for scripts and agents on this Mac. Read-only: no route changes a host, a runner or GitHub.
 public enum APIRouter {
     public static let version = 1
     public static let defaultPort: UInt16 = 47623
@@ -193,7 +192,6 @@ public enum APIRouter {
     }
 }
 
-/// Serves `APIRouter` on 127.0.0.1. One request per connection.
 public final class LocalAPIServer: @unchecked Sendable {
     private let listener: NWListener
     private let port: UInt16
@@ -222,7 +220,6 @@ public final class LocalAPIServer: @unchecked Sendable {
             return
         }
         connection.start(queue: queue)
-        // A client that does not finish its request in 10 s is dropped.
         queue.asyncAfter(deadline: .now() + 10) { connection.cancel() }
         receive(connection, buffer: Data())
     }

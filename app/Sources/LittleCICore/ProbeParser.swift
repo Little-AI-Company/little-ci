@@ -1,7 +1,5 @@
 import Foundation
 
-/// Turns one probe's JSON into `HostFacts`. Parsing lives here, in typed code, so recorded real
-/// output from each host is the test fixture.
 public enum ProbeParser {
     struct Envelope: Decodable {
         var probeVersion: Int
@@ -39,7 +37,6 @@ public enum ProbeParser {
         case .orbstackVM:
             let machine = try parseOrbStackVM(output)
             if machine.machineState != .present {
-                // No guest to read (absent or unreadable), but the Mac side answered.
                 return HostFacts(probeVersion: ProbeScript.version, observedAt: observedAt, hostname: "", userID: nil, cpuCount: nil,
                                  memoryBytes: nil, loadAverage: [], memoryFreePercent: nil, swapUsedBytes: nil, swapTotalBytes: nil,
                                  onACPower: nil, volumes: [], docker: nil, orbstack: nil, virtualMachine: machine, runners: [],
@@ -53,7 +50,6 @@ public enum ProbeParser {
         }
     }
 
-    /// VM-level facts that only the Mac side of an OrbStack probe has.
     public static func parseOrbStackVM(_ output: Data) throws -> OrbStackVMFacts {
         let sections = try decodeEnvelope(output).sections
         let section = sections["vm_info"]
@@ -223,7 +219,6 @@ public enum ProbeParser {
         return Int64(value * 1_048_576)
     }
 
-    /// `df -k -P`. Filesystem names and mount points may contain spaces, so match from the numbers.
     static func parseVolumes(df: String, readOnlyMounts: Set<String>) -> [VolumeFacts] {
         df.split(separator: "\n").dropFirst().compactMap { line in
             guard let match = line.firstMatch(of: /^(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(\/.*)$/),
@@ -285,7 +280,6 @@ public enum ProbeParser {
 }
 
 public struct OrbStackVMFacts: Codable, Sendable, Equatable {
-    /// `absent` only when `orbctl info` said "machine not found"; anything else unreadable fails closed.
     public enum MachineState: String, Codable, Sendable, CaseIterable { case present, absent, unreadable }
 
     public struct Info: Codable, Sendable, Equatable {

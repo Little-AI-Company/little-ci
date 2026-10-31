@@ -1,8 +1,6 @@
 import Foundation
 import LittleCICore
 
-// `LittleCI probe <host-id> [--raw] [--power-log]` prints one probe's facts as JSON and exits.
-// With no subcommand, the menu bar app starts.
 let arguments = CommandLine.arguments.dropFirst()
 if arguments.first == "probe", let hostID = arguments.dropFirst().first {
     await runProbeCommand(hostID: hostID, raw: arguments.contains("--raw"), powerLog: arguments.contains("--power-log"))

@@ -6,7 +6,6 @@ struct LittleCIApp: App {
     @State private var store = FleetStore()
 
     init() {
-        // A menu bar app: no Dock icon, also when run outside its bundle.
         NSApplication.shared.setActivationPolicy(.accessory)
         if let appearance = LaunchOptions.current.appearance { NSApplication.shared.appearance = NSAppearance(named: appearance) }
     }
@@ -28,7 +27,6 @@ struct LittleCIApp: App {
         .defaultSize(width: 980, height: 680)
         .defaultLaunchBehavior(.suppressed)
 
-        // The panel's content in a plain window, so it can be captured without clicking the menu bar.
         Window("Little CI panel", id: "panel") {
             MenuBarPanel(store: store)
                 .task { store.start() }

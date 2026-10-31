@@ -1,12 +1,8 @@
 import Foundation
 
-/// Builds plans with exact commands. Names in commands come from the validated inventory or GitHub's
-/// runner list, and are quoted again here, so no observed text is ever run as shell code.
 public enum PlanFactory {
     static func quote(_ text: String) -> String { "'\(text.replacingOccurrences(of: "'", with: "'\\''"))'" }
 
-    /// Unloads a launchd runner unless its worker process is running a job. GitHub's busy flag lags the
-    /// moment a runner accepts a job, so the host itself is the last check (exit 75: busy, nothing changed).
     static func unloadIfIdle(_ mac: MacLaunchdHost, _ runner: String) -> String {
         let worker = "\(mac.runnerRoot)/\(runner)/bin/Runner.Worker"
         return "if pgrep -f -- \(quote(worker)) >/dev/null; then echo \(quote("\(runner) is running a job; not stopped")) >&2; exit 75; fi; "
@@ -35,7 +31,6 @@ public enum PlanFactory {
             preconditions: [.runnerIdle(name: runner)])]
     }
 
-    /// Stops the given runners that GitHub reports idle; busy ones keep their jobs.
     static func drainIdleRunners(_ host: HostSpec, _ runners: [GitHubRunner], reason: String) -> [Plan] {
         guard case .macLaunchd(let mac) = host.kind else { return [] }
         let idle = runners.filter { !$0.busy }.map(\.name).sorted()
@@ -57,8 +52,6 @@ public enum PlanFactory {
             preconditions: [])]
     }
 
-    /// Unregisters on GitHub first (config.sh remove deletes the local credentials itself), then removes the agent.
-    /// The runner directory and its _work checkouts stay.
     static func retireLaunchdRunner(_ host: HostSpec, _ runner: String, inventory: Inventory) -> Plan? {
         guard case .macLaunchd(let mac) = host.kind else { return nil }
         let label = mac.serviceLabel(of: runner)
@@ -103,10 +96,6 @@ public enum PlanFactory {
 
     // MARK: little-ci fleets (OrbStack VM, Linux server)
 
-    /// Bring-up and teardown through little-ci's own scripts, which carry its identity, busy and teardown checks.
-    /// Loads a little-ci checkout's config.env the way its scripts do (lib/github-target.sh) and exits 1, before
-    /// anything changes, when the effective scope, target, prefix, user, runner group or machine differs from the
-    /// reviewed plan. Arguments: checkout, scope, target, prefix, user, runner group (empty in repository scope), machine.
     static let configurationCheck = #"""
         set -euo pipefail
         cd "$1"
@@ -133,7 +122,6 @@ public enum PlanFactory {
         return [checkout, github.scope.rawValue, target, prefix, user, github.runnerGroup ?? ""] + (machine.map { [$0] } ?? [])
     }
 
-    /// `machineExists`: false offers only bring-up. Callers offer nothing while a VM fails its identity checks.
     static func lifecyclePlans(_ host: HostSpec, inventory: Inventory, machineExists: Bool = true) -> [Plan] {
         let plans = allLifecyclePlans(host, inventory: inventory)
         return machineExists ? plans : plans.filter { $0.id.hasPrefix("vm.up.") || $0.id.hasPrefix("server.up.") }

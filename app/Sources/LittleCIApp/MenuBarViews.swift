@@ -19,14 +19,12 @@ extension Severity {
     }
 }
 
-/// The menu bar glyph: the worst current finding. A static symbol; nothing repaints continuously.
 struct MenuBarGlyph: View {
     let store: FleetStore
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         glyph.task {
-            // The label is the one view that always renders, so it opens the windows launch flags ask for.
             if LaunchOptions.current.showsDetails { openWindow(id: "details") }
             if LaunchOptions.current.showsPanel { openWindow(id: "panel") }
             if LaunchOptions.current.showsDetails || LaunchOptions.current.showsPanel { NSApp.activate() }
@@ -37,7 +35,6 @@ struct MenuBarGlyph: View {
         let findings = store.state?.assessment.findings ?? []
         let worst = findings.map(\.severity).max()
         let critical = findings.filter { $0.severity == .critical }.count
-        // Loaded with nothing above info is "all clear"; only a missing state is "reading".
         let symbol = switch (store.state, worst) {
         case (nil, _): store.setupProblem == nil ? "circle.dotted" : "questionmark.circle"
         case (_, nil), (_, .info?): "checkmark.circle"
@@ -159,7 +156,6 @@ struct FindingRow: View {
     }
 }
 
-/// Opens a plan for review. Nothing runs until the review window's Run button.
 struct PlanButton: View {
     let plan: Plan
     let store: FleetStore
@@ -175,8 +171,6 @@ struct PlanButton: View {
     }
 }
 
-/// "just now" or "3 min. ago", fixed until the view next updates with new state.
-/// (Text's relative style would re-render every second; the formatter writes zero as "in 0 sec.")
 func age(_ date: Date) -> String {
     let now = Date()
     guard now.timeIntervalSince(date) >= 60 else { return "just now" }

@@ -3,7 +3,6 @@ import LittleCICore
 import Observation
 import UserNotifications
 
-/// The app's one source of truth: the latest fleet state, and the plan under review.
 @Observable @MainActor
 final class FleetStore {
     private(set) var state: FleetState?
@@ -17,11 +16,9 @@ final class FleetStore {
     private var launchedInDemo = false
     private var liveState: FleetState?
     private var apiServer: LocalAPIServer?
-    /// Nil until the first state arrives; then history already on disk counts as announced.
     private var announced: Set<UUID>?
     private let apiState = APIStateBox()
 
-    /// Starts live monitoring, unless the app was launched with demo data (then it waits until demo is turned off).
     func start() {
         if LaunchOptions.current.demo, !launchedInDemo {
             launchedInDemo = true
@@ -139,7 +136,6 @@ final class FleetStore {
     }
 }
 
-/// The state the local API serves, readable from the server's queue.
 actor APIStateBox {
     private var state: FleetState?
     func set(_ state: FleetState?) { self.state = state }

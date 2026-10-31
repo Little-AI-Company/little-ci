@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Builds "Little CI.app" (release, ad-hoc signed) into app/build/.
-#   app/scripts/build-app.sh            build
-#   app/scripts/build-app.sh --install  also copy it to /Applications, replacing a quit copy
 set -euo pipefail
 
 app_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

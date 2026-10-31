@@ -1,7 +1,5 @@
 import Foundation
 
-/// Observed transitions, kept on this Mac: at most 30 days and 5,000 events. History exists only for
-/// the time the app ran; it cannot reconstruct what happened between observations.
 public actor EventJournal {
     public static let retention: TimeInterval = 30 * 86_400
     public static let capacity = 5_000
@@ -9,7 +7,6 @@ public actor EventJournal {
     private let url: URL?
     public private(set) var events: [FleetEvent] = []
 
-    /// `url == nil` keeps the journal in memory (demo data, tests).
     public init(url: URL?) {
         self.url = url
         if let url, let text = try? String(contentsOf: url, encoding: .utf8) {
@@ -49,7 +46,6 @@ public actor EventJournal {
         for event in newEvents { try handle.write(contentsOf: try JobLedger.encoder.encode(event) + Data("\n".utf8)) }
     }
 
-    /// Events for findings that appeared or cleared between two assessments.
     public static func transitions(from previous: Assessment?, to current: Assessment) -> [FleetEvent] {
         let before = Dictionary((previous?.findings ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let after = Dictionary(current.findings.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })

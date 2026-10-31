@@ -1,6 +1,5 @@
 import Foundation
 
-/// A plan the user reviewed. Single use; expires after 15 minutes.
 public struct PlanReview: Sendable, Equatable, Identifiable {
     public static let lifetime: TimeInterval = 900
 
@@ -25,11 +24,9 @@ public struct PlanOutcome: Codable, Sendable, Equatable {
     public var planID: String
     public var title: String
     public var finishedAt: Date
-    /// Why the plan did not start. Nothing ran when this is not empty.
     public var refusals: [String]
     public var completedSteps: [StepResult]
     public var failedStep: StepResult?
-    /// Exact commands that did not run, for recovery.
     public var remainingCommands: [String]
 
     public var succeeded: Bool { refusals.isEmpty && failedStep == nil }
@@ -42,9 +39,7 @@ public struct PlanOutcome: Codable, Sendable, Equatable {
     }
 }
 
-/// The GitHub reads and writes a plan needs. `GitHubClient` is the real one; tests replace it.
 public protocol GitHubAccess: Sendable {
-    /// `fresh: true` bypasses every cache, for reads right before a plan runs.
     func snapshot(for inventory: Inventory, now: Date, fresh: Bool) async throws -> GitHubSnapshot
     func allRunners(_ target: GitHubTarget) async throws -> [GitHubRunner]
     func registrationToken(_ target: GitHubTarget) async throws -> String
@@ -55,7 +50,6 @@ public protocol GitHubAccess: Sendable {
 
 extension GitHubClient: GitHubAccess {}
 
-/// Runs reviewed plans: re-reads, re-derives, checks preconditions, then runs steps in order.
 public actor PlanExecutor {
     private let github: any GitHubAccess
     private let prober: HostProber
@@ -79,7 +73,6 @@ public actor PlanExecutor {
             return refuse(["This review is older than 15 minutes. Review the plan again."])
         }
 
-        // Read GitHub and every host the plan touches again, and derive the plan again from those reads.
         var fresh = observations
         do {
             fresh.github = try await github.snapshot(for: observations.inventory, now: now, fresh: true)
@@ -122,7 +115,6 @@ public actor PlanExecutor {
                            failedStep: nil, remainingCommands: [])
     }
 
-    /// GitHub's runner list read again now; a runner it cannot read counts as busy.
     func firstBusy(of names: [String], target: GitHubTarget) async -> String? {
         guard !names.isEmpty else { return nil }
         guard let runners = try? await github.allRunners(target) else { return names.first }

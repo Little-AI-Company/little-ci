@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-# install-runners-orb.sh — copy this repo into the OrbStack CI machine and
-# register runners. Run on the Mac. REGTOKEN is forwarded through OrbStack
-# (ORBENV) and is never written to disk.
-#
-#     export REGTOKEN="$(gh api --method POST repos/OWNER/REPO/actions/runners/registration-token --jq .token)"
-#     ./install-runners-orb.sh
-#
-# If REGTOKEN is unset, this script fetches one from GITHUB_URL via gh.
 set -euo pipefail
 set +x
 

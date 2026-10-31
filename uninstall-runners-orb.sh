@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Ownership-gated Mac-side teardown for one OrbStack Little-CI fleet.
 set -euo pipefail
 set +x
 

@@ -1,13 +1,10 @@
 import Foundation
 
-/// Why a job failed: the machine, the code, or not enough evidence. Signatures come from the
-/// 2026-10-20 measurement (reports/phase1-measurement.md).
 public struct FailureClass: Codable, Sendable, Equatable {
     public enum Cause: String, Codable, Sendable, CaseIterable { case machine, code, unsure, derived }
 
     public var cause: Cause
     public var reason: String
-    /// The log line that matched, when one did.
     public var evidence: String?
 
     public init(cause: Cause, reason: String, evidence: String? = nil) {
@@ -35,7 +32,6 @@ public enum FailureClassifier {
 
     nonisolated(unsafe) static let testTimeout = try! Regex(#"timed out after 5000ms"#)
 
-    /// Facts about the same commit's other attempts, which turn an ambiguous failure into a machine one.
     public struct Context: Sendable {
         public var passedOnAnotherHost: Bool
         public var passedOnRerun: Bool
@@ -46,7 +42,6 @@ public enum FailureClassifier {
         }
     }
 
-    /// `aggregateJobNames` are jobs that only report other jobs' results (CI's "Check").
     public static func classify(_ job: WorkflowJob, log: String?, annotations: [String] = [], context: Context = .init(),
                                 aggregateJobNames: Set<String> = ["Check", "Run failed main jobs again"]) -> FailureClass {
         if aggregateJobNames.contains(job.name) { return .init(cause: .derived, reason: "reports other jobs") }
@@ -68,8 +63,6 @@ public enum FailureClassifier {
         return .init(cause: .code, reason: "test, lint or typecheck output")
     }
 
-    /// Lines the job printed. GitHub's log also echoes each step's script (in cyan) and its header;
-    /// error text inside a script is not an error, so those lines are dropped.
     public static func printedOutput(_ log: String) -> [String] {
         log.split(separator: "\n", omittingEmptySubsequences: true).compactMap { line in
             var text = Substring(line)

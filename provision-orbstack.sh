@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# provision-orbstack.sh — create and prepare Little-CI's OrbStack machine.
-#
-# Run this script on an Apple Silicon Mac. It creates an isolated,
-# network-isolated Ubuntu 24.04 arm64 machine, installs base and CI job
-# dependencies, and copies the Little-CI scripts into the machine. Safe to re-run
-# after creation; incompatible existing machines are rejected instead of changed
-# implicitly.
 
 fail() {
   echo "ERROR: $*" >&2
@@ -104,7 +97,6 @@ copy_guest_runtime() {
   echo "== copying Little-CI guest runtime to $ORB_MACHINE:$remote_repo_dir =="
   tar -C "$repo_dir" -czf "$guest_runtime_archive_path" "${guest_runtime_paths[@]}"
   orbctl run -m "$ORB_MACHINE" -u "$RUNNER_USER" mkdir -p "$remote_repo_dir"
-  # Isolated machines have no Mac bind mount, so stream the archive over stdin.
   orbctl run -m "$ORB_MACHINE" -u "$RUNNER_USER" \
     tar -xzf - -C "$remote_repo_dir" < "$guest_runtime_archive_path"
 
@@ -179,21 +171,12 @@ main() {
       fail "refusing to modify an existing machine without matching Little-CI ownership"
   fi
 
-  # Some workflows expect Ubuntu's deb822 source file. OrbStack's image may
-  # still ship the classic /etc/apt/sources.list instead. CI job dependencies
-  # come from universe, so verified Ubuntu archives in an existing ubuntu.sources
-  # gain that component in place; other fields and sources are preserved. The LITTLE_CI_APT_*
-  # paths are test hooks only; orbctl does not forward Mac environment. This runs
-  # before any guest apt use so malformed sources stop provisioning first.
   echo "== ensuring Ubuntu deb822 package sources =="
   orbctl run -m "$ORB_MACHINE" -u root bash -s <<'EOF'
 set -euo pipefail
 apt_sources_dir="${LITTLE_CI_APT_SOURCES_DIR:-/etc/apt/sources.list.d}"
 ubuntu_sources="$apt_sources_dir/ubuntu.sources"
 
-# Print "changed" or "unchanged"; with a second path, write the updated file
-# there. Exits nonzero without output on malformed deb822. POSIX awk only:
-# this runs before base packages, so python3 may not exist yet.
 add_universe_component() {
   awk -v sources_path="$1" -v updated_path="${2:-}" -v q="'" '
     function reject(reason) {
@@ -209,11 +192,6 @@ add_universe_component() {
     function lacks(field_name) {
       return fields[field_name] !~ /[^[:space:]]/
     }
-    # Mirrors apt 2.7 deb822 rules: every stanza needs a Types field limited to
-    # deb and deb-src; empty Types or false Enabled make a stanza inert;
-    # enabled stanzas need URIs that each contain ":" and Suites; exact-path
-    # Suites (ending in /) must omit Components, other Suites require it, and
-    # one stanza cannot mix the two.
     function finish_stanza(   enabled, suites, uris, types, count, i, suite_count, exact_count, ubuntu_archive, archive_uri, archive_authority) {
       if (!in_stanza) return
       if (!("types" in fields)) reject("deb822 stanza at line " stanza_start " lacks Types")
@@ -223,8 +201,6 @@ add_universe_component() {
           reject("deb822 stanza at line " stanza_start " has unknown Types value " q types[i] q)
       enabled = tolower(fields["enabled"])
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", enabled)
-      # apt StringToBool: false words, or a whole value strtol(..., 0) reads
-      # as zero (octal, 0x hex, or Ubuntu 24.04 glibc 0b binary; optional sign).
       if (!lacks("types") && enabled !~ /^([+-]?(0+|0x0+|0b0+)|no|false|without|off|disable)$/) {
         if (lacks("uris")) reject("deb822 stanza at line " stanza_start " lacks URIs")
         if (lacks("suites")) reject("deb822 stanza at line " stanza_start " lacks Suites")
@@ -234,9 +210,6 @@ add_universe_component() {
           if (uris[i] == "") continue
           if (index(uris[i], ":") == 0)
             reject("deb822 stanza at line " stanza_start " has URI " q uris[i] q " without " q ":" q)
-          # Every URI must name a known Ubuntu archive. Custom mirrors and
-          # mixed Ubuntu/third-party stanzas retain their original components.
-          # Normalize scheme/authority only for comparison; preserve path case and text.
           archive_uri = uris[i]
           if (match(tolower(archive_uri), /^https?:\/\/[^\/]+/)) {
             archive_authority = tolower(substr(archive_uri, 1, RLENGTH))
@@ -261,8 +234,6 @@ add_universe_component() {
           reject("deb822 stanza at line " stanza_start " has exact-path Suites; exact-path Suites must omit Components")
         if (exact_count == 0 && lacks("components"))
           reject("deb822 stanza at line " stanza_start " lacks Components")
-        # Continued Components values were accumulated above; append to the
-        # first Components line so continuation lines stay byte-identical.
         if (exact_count == 0 && ubuntu_archive && !has_universe(fields["components"])) {
           sub(/[[:space:]]+$/, "", lines[components_line])
           lines[components_line] = lines[components_line] " universe"
@@ -287,8 +258,6 @@ add_universe_component() {
       if (separator < 2) reject("malformed deb822 field at line " NR)
       field_name = tolower(substr($0, 1, separator - 1))
       sub(/[[:space:]]+$/, "", field_name)
-      # Like apt, a repeated field replaces the earlier one (with its
-      # continuations); earlier lines are left byte-identical.
       fields[field_name] = substr($0, separator + 1)
       current_field = field_name
       if (!in_stanza) { in_stanza = 1; stanza_start = NR }
@@ -324,9 +293,6 @@ fi
 
 updated_sources="$(mktemp "$apt_sources_dir/.ubuntu.sources.little-ci.XXXXXX")"
 trap 'rm -f -- "$updated_sources"' EXIT
-# Copy mode (and owner, when root) onto the temp file first; awk then rewrites
-# its contents in place. cp -p works on GNU and BSD, unlike chown --reference,
-# so the test suite can run this script on a Mac.
 cp -p -- "$ubuntu_sources" "$updated_sources"
 sources_state="$(add_universe_component "$ubuntu_sources" "$updated_sources")"
 if [ "$sources_state" = changed ]; then
@@ -356,8 +322,6 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 EOF
 
-  # The runner needs Docker access for container jobs. Docker group membership is
-  # root-equivalent, so do not also leave the service account with sudo access.
   orbctl run -m "$ORB_MACHINE" -u root bash -s -- "$RUNNER_USER" <<'EOF'
 set -euo pipefail
 runner_user="$1"
@@ -387,7 +351,6 @@ EOF
     "RUNNER_COUNT=$RUNNER_COUNT" \
     bash -c 'cd "$1" && ./provision-box.sh' bash "$remote_repo_dir"
 
-  # Runs after the deb822 step because ffmpeg and ripgrep come from universe.
   echo "== installing CI job dependencies =="
   orbctl run -m "$ORB_MACHINE" -u root \
     bash -c 'cd "$1" && ./provision-job-dependencies.sh' bash "$remote_repo_dir"

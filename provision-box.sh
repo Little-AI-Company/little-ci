@@ -1,22 +1,4 @@
 #!/usr/bin/env bash
-# provision-box.sh — idempotent host provisioner for a self-hosted CI runner box.
-#
-# Sets up, for a memory-constrained box running heavy CI jobs:
-#   1. Swap        — one swapfile PER runner on generic Linux. OrbStack guests
-#                    use OrbStack-managed zram/swap instead.
-#   2. swappiness  — low (default 10) so the box only swaps under real pressure.
-#   3. Scratch     — per-fleet, per-runner scratch directories so runners do not
-#                    contend on a single shared /tmp.
-#   4. Reaper      — ages /tmp + fleet scratch (default 6h) via systemd-tmpfiles,
-#                    so dead job-workspace dirs can't accumulate and fill the disk.
-#
-# Safe to re-run. Run as root ON the box:
-#     sudo ./provision-box.sh
-# or from your laptop:
-#     ssh root@BOX 'bash -s' < provision-box.sh      # (with env vars exported inline)
-#
-# Run this BEFORE install-runners.sh so fleet scratch exists before the installer
-# binds each runner's registered systemd service to its directory.
 is_orbstack_guest() {
   local guest_marker kernel_release_file
   guest_marker="${LITTLE_CI_ORBSTACK_GUEST_MARKER:-/opt/orbstack-guest}"
@@ -127,8 +109,6 @@ cleanup_pending_swapfile() {
   fi
 }
 
-# Keep detection sourceable for dependency-light tests without provisioning the
-# current host.
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   return 0
 fi
@@ -164,12 +144,9 @@ case "$REMOVE_LEGACY_SWAPFILES" in
 esac
 echo "== provisioning for $RUNNER_COUNT runner(s): scratch + ${REAP_AGE} reaper =="
 
-# --- 1. Swap: one <SWAP_GB> swapfile per runner, persisted ---
 if is_orbstack_guest; then
   echo "== OrbStack guest detected: using OrbStack-managed zram/swap =="
 
-  # Detect the exact fstab shape written by older releases. Removal is opt-in
-  # because a matching file is not enough to prove ownership.
   legacy_swap_paths="$(awk '
     $1 ~ /^\/swapfile[0-9]+$/ && $2 == "none" && $3 == "swap" &&
       $4 == "sw" && $5 == "0" && $6 == "0" && NF == 6 { print $1 }
@@ -248,11 +225,9 @@ else
   done
 fi
 
-# --- 2. swappiness, persisted ---
 sysctl -w vm.swappiness="$SWAPPINESS" >/dev/null
 echo "vm.swappiness=$SWAPPINESS" > /etc/sysctl.d/99-little-ci-swappiness.conf
 
-# --- 3. Per-fleet, per-runner scratch ---
 reaper_config="D /tmp 1777 root root $REAP_AGE"
 scratch_root="/scratch/$RUNNER_NAME_PREFIX"
 mkdir -p "$scratch_root"
@@ -264,7 +239,6 @@ for runner_number in $(seq 1 "$RUNNER_COUNT"); do
   reaper_config+=$'\n'"D $scratch_dir 1777 root root $REAP_AGE"
 done
 
-# --- 4. Reaper: age /tmp + this fleet's scratch ---
 tmpfiles_policy="/etc/tmpfiles.d/little-ci-${RUNNER_NAME_PREFIX}-scratch.conf"
 printf '%s\n' "$reaper_config" > "$tmpfiles_policy"
 

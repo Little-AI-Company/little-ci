@@ -2,7 +2,6 @@ import Foundation
 
 // MARK: GitHub
 
-/// A runner as GitHub's runner API reports it.
 public struct GitHubRunner: Codable, Sendable, Equatable, Identifiable {
     public enum Status: String, Codable, Sendable, CaseIterable { case online, offline }
     public struct Label: Codable, Sendable, Equatable { public var name: String }
@@ -22,13 +21,11 @@ public struct WorkflowRun: Codable, Sendable, Equatable, Identifiable {
 
     public var id: Int
     public var name: String
-    /// Stable per workflow file; two workflows can share a display name.
     public var workflowId: Int?
     public var event: String
     public var status: String
     public var conclusion: String?
     public var headBranch: String?
-    /// The repository the head branch lives in: a fork's name differs from the base repository's.
     public var headRepository: Repository?
     public var headSha: String
     public var displayTitle: String
@@ -57,13 +54,11 @@ public struct WorkflowJob: Codable, Sendable, Equatable, Identifiable {
     public var headBranch: String?
     public var runAttempt: Int
 
-    /// A rerun attempt copies the jobs it did not rerun, keeping the old start time. Those copies are not new work.
     public var isCarriedOverCopy: Bool {
         guard let startedAt else { return false }
         return startedAt < createdAt.addingTimeInterval(-2)
     }
 
-    /// The job took a runner (a named self-hosted runner, not a skipped or never-started job).
     public var tookRunner: Bool {
         guard let runnerName, !runnerName.isEmpty, startedAt != nil else { return false }
         return !isCarriedOverCopy
@@ -96,7 +91,6 @@ public struct PullRequestState: Codable, Sendable, Equatable {
     public var isOpen: Bool { state == "open" }
 }
 
-/// What the workflow and package.json ask of each runner's toolchain.
 public struct ToolchainRequirement: Codable, Sendable, Equatable {
     public var bunVersion: String?
     public var minimumNodeMajor: Int?
@@ -107,19 +101,13 @@ public struct ToolchainRequirement: Codable, Sendable, Equatable {
     }
 }
 
-/// One read of GitHub at one moment.
 public struct GitHubSnapshot: Codable, Sendable, Equatable {
     public var observedAt: Date
     public var runners: [GitHubRunner]
-    /// Runs that are queued, waiting or in progress.
     public var activeRuns: [WorkflowRun]
-    /// Organization scope: runners in the configured runner group. Nil in repository scope.
     public var runnerGroupMembers: Set<String>?
-    /// The newest runs of the check workflow on main that passed or failed (cancelled runs say nothing), newest first.
     public var recentMainRuns: [WorkflowRun]
-    /// Failed jobs of the newest completed main run.
     public var redMainJobs: [String]
-    /// Pull requests by head branch. A branch with any open PR maps to an open one.
     public var pullRequests: [String: PullRequestState]
     public var toolchain: ToolchainRequirement?
 
@@ -141,7 +129,6 @@ public struct GitHubSnapshot: Codable, Sendable, Equatable {
 
 // MARK: Hosts
 
-/// All health facts one probe round trip returned.
 public struct HostFacts: Codable, Sendable, Equatable {
     public var probeVersion: Int
     public var observedAt: Date
@@ -149,7 +136,6 @@ public struct HostFacts: Codable, Sendable, Equatable {
     public var userID: Int?
     public var cpuCount: Int?
     public var memoryBytes: Int64?
-    /// 1, 5 and 15 minute load averages.
     public var loadAverage: [Double]
     public var memoryFreePercent: Int?
     public var swapUsedBytes: Int64?
@@ -158,7 +144,6 @@ public struct HostFacts: Codable, Sendable, Equatable {
     public var volumes: [VolumeFacts]
     public var docker: DockerFacts?
     public var orbstack: OrbStackFacts?
-    /// For a VM host: the VM's OrbStack settings and little-ci identity, read on the parent Mac.
     public var virtualMachine: OrbStackVMFacts?
     public var runners: [RunnerServiceFacts]
     public var recentPowerEvents: [PowerEvent]
@@ -178,7 +163,6 @@ public struct VolumeFacts: Codable, Sendable, Equatable {
     public var availableBytes: Int64
     public var isReadOnly: Bool
 
-    /// Simulator runtimes and other read-only images are always full by design.
     public var countsForHealth: Bool {
         guard !isReadOnly, totalBytes > 0 else { return false }
         if mountPoint == "/System/Volumes/Data" { return true }
@@ -190,7 +174,6 @@ public struct VolumeFacts: Codable, Sendable, Equatable {
     }
 
     public var usedFraction: Double {
-        // df's capacity: used / (used + available), which ignores space reserved for root.
         let used = Double(max(0, totalBytes - availableBytes))
         return used / Double(totalBytes)
     }
@@ -209,7 +192,6 @@ public struct DockerFacts: Codable, Sendable, Equatable {
 public struct OrbStackFacts: Codable, Sendable, Equatable {
     public var version: String?
     public var status: String?
-    /// The last start in vmgr.log failed to mount OrbStack's data disk.
     public var dataMountFailed: Bool
     public var lastStartAt: String?
     public var evidence: [String]
@@ -227,9 +209,7 @@ public struct RunnerServiceFacts: Codable, Sendable, Equatable {
 
     public var name: String
     public var directoryExists: Bool
-    /// From the runner's `.runner` file; only the URL and name are read, never credentials.
     public var registeredURL: String?
-    /// The runner name in `.runner` (`agentName`).
     public var registeredName: String?
     public var serviceDefinitionExists: Bool
     public var service: ServiceState
@@ -243,7 +223,6 @@ public struct PowerEvent: Codable, Sendable, Equatable {
     public var reason: String
 }
 
-/// The result of one attempt to probe a host. A failed attempt keeps the reason; the last facts stay visible.
 public struct HostObservation: Codable, Sendable, Equatable {
     public enum Outcome: Codable, Sendable, Equatable {
         case reached(HostFacts)

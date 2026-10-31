@@ -1,12 +1,5 @@
 import AppKit
 
-/// Launch flags for reproducible screenshots (the crit skill uses them). None of them changes the fleet.
-///
-///   --show-details        open the details window at launch
-///   --show-panel          also show the menu bar panel's content in a window
-///   --pane <name>         overview, hosts, runners, queue or events
-///   --demo                start with demo data
-///   --appearance <mode>   light or dark
 struct LaunchOptions {
     var showsDetails = false
     var showsPanel = false

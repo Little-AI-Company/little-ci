@@ -1,22 +1,7 @@
 #!/usr/bin/env bash
-# provision-job-dependencies.sh — install Ubuntu packages trusted CI jobs expect.
-#
-# Installs ffmpeg, ripgrep, a C/C++ toolchain for native-module builds, and the
-# exact Ubuntu packages that Playwright's `playwright install-deps chromium`
-# installs, so jobs can launch a Chromium they download themselves. It does not
-# download browsers, Node.js, Bun, or Playwright, and it changes no runner,
-# service, or fleet state.
-#
-# Safe to re-run: when every package is already installed it verifies the tools
-# without contacting apt. Run as root on an Ubuntu 24.04 arm64 or amd64 host:
-#     sudo ./provision-job-dependencies.sh
-# provision-orbstack.sh runs it inside the OrbStack guest automatically.
 
 set -euo pipefail
 
-# Load the owning checkout's trusted config.env (never the caller's cwd) before
-# defining anything below, so it cannot replace the fixed package lists or the
-# functions that install them. This script reads no settings from it.
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$script_dir/lib/github-target.sh" ] || {
   echo "missing $script_dir/lib/github-target.sh" >&2
@@ -31,20 +16,10 @@ fail() {
   exit 1
 }
 
-# ffmpeg and ripgrep are in Ubuntu's universe component.
 job_tool_packages=(ffmpeg ripgrep)
 
-# npm falls back to node-gyp whenever a native module has no prebuilt binary for
-# the job's exact Node ABI and architecture (better-sqlite3 12.x on Node 20
-# arm64, for one), and node-gyp needs make, a C/C++ compiler, and pkg-config.
-# GitHub-hosted images carry these; a bare Ubuntu guest does not.
 native_build_packages=(build-essential pkg-config)
 
-# Playwright v1.59.1 `install-deps chromium` for ubuntu24.04-x64 and
-# ubuntu24.04-arm64 (identical lists): the chromium group plus the tools group
-# that install-deps always adds. Refresh both lists together from
-# https://github.com/microsoft/playwright/blob/v1.59.1/packages/playwright-core/src/server/registry/nativeDeps.ts
-# when consuming projects move to a Playwright release that changes them.
 playwright_chromium_packages=(
   libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2
   libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 libnspr4 libnss3
@@ -64,7 +39,6 @@ require_supported_host() {
 
   [ "$(id -u)" -eq 0 ] || fail "provision-job-dependencies.sh must run as root"
   [ -r "$os_release_file" ] || fail "cannot read $os_release_file"
-  # os-release is a root-owned shell fragment; read it in subshells only.
   # shellcheck source=/dev/null
   distribution_id="$(. "$os_release_file" && printf '%s' "${ID:-}")"
   # shellcheck source=/dev/null
@@ -90,8 +64,6 @@ list_missing_packages() {
   done
 }
 
-# Package maintenance must not restart a runner mid-job. provision-orbstack.sh
-# writes the same policy before its base packages; generic hosts get it here.
 install_needrestart_runner_policy() {
   local needrestart_conf_dir
   needrestart_conf_dir="${LITTLE_CI_NEEDRESTART_CONF_DIR:-/etc/needrestart/conf.d}"
@@ -127,7 +99,6 @@ main() {
       fail "packages still missing after apt-get install: ${remaining_packages[*]}"
   fi
 
-  # Capture instead of piping to head so pipefail cannot trip on SIGPIPE.
   ffmpeg_version="$(ffmpeg -version)" || fail "ffmpeg is installed but does not run"
   ripgrep_version="$(rg --version)" || fail "rg is installed but does not run"
   make_version="$(make --version)" || fail "make is installed but does not run"

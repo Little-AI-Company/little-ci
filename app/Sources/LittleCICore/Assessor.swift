@@ -1,15 +1,12 @@
 import Foundation
 
-/// Everything one assessment reads. Assembled by `FleetMonitor`, recorded as fixtures in tests.
 public struct FleetObservations: Codable, Sendable, Equatable {
     public var inventory: Inventory
     public var github: GitHubSnapshot?
     public var githubError: String?
     public var hosts: [String: HostObservation]
-    /// Lendable hosts currently lent to CI.
     public var lentHosts: Set<String>
     public var ledger: LedgerSummary
-    /// Finding IDs active in the previous assessment, for thresholds that clear higher than they raise.
     public var previouslyActive: Set<String>
 
     public init(inventory: Inventory, github: GitHubSnapshot?, githubError: String? = nil, hosts: [String: HostObservation],
@@ -24,9 +21,7 @@ public struct FleetObservations: Codable, Sendable, Equatable {
     }
 }
 
-/// observe -> compare with the inventory -> findings and plans. No I/O, so recorded incidents replay exactly.
 public enum Assessor {
-    /// Observations older than this are stale: shown with their age, never read as "offline" or "healthy".
     public static let staleAfter: TimeInterval = 150
     static let diskCriticalFree = 0.05, diskWarningFree = 0.10, diskClearFree = 0.12
     static let loadWarningPerCore = 3.0, loadCriticalPerCore = 8.0
@@ -112,7 +107,6 @@ public enum Assessor {
             for runner in host.runners { assess(runner, on: host, facts: facts, mayTakeJobs: mayTakeJobs) }
             switch host.kind {
             case .macLaunchd:
-                // Retire only a runner whose own registration names this target and this exact runner.
                 plans += host.runners.compactMap { runner in
                     owns(facts.runner(named: runner.name), runner.name) ? PlanFactory.retireLaunchdRunner(host, runner.name, inventory: inventory) : nil }
             case .orbstackVM(let vm):
@@ -127,10 +121,8 @@ public enum Assessor {
         }
 
         mutating func assessDisks(_ host: HostSpec, _ facts: HostFacts) {
-            // Volumes in one APFS container (or one filesystem) report the same numbers: one finding for them.
             let groups = Dictionary(grouping: facts.volumes.filter(\.countsForHealth)) { "\($0.totalBytes)/\($0.availableBytes)" }
             for volumes in groups.values {
-                // Name the container by its main volume: macOS's Data volume, then the shortest mount point.
                 let volume = volumes.first { $0.mountPoint == "/System/Volumes/Data" }
                     ?? volumes.sorted { $0.mountPoint.count < $1.mountPoint.count }[0]
                 let free = 1 - volume.usedFraction
@@ -211,7 +203,6 @@ public enum Assessor {
 
         enum MachineState { case absent, matches, mismatched }
 
-        /// little-ci's isolation invariants, checked on every observation.
         mutating func assessVirtualMachine(_ host: HostSpec, _ vm: OrbStackVMHost, _ facts: HostFacts) -> MachineState {
             guard let machine = facts.virtualMachine else { return .mismatched }
             if machine.machineState == .unreadable {
@@ -253,8 +244,6 @@ public enum Assessor {
             return .mismatched
         }
 
-        /// little-ci writes `/etc/little-ci/identity` as `key=value` lines (lib/orbstack-machine.sh). Every
-        /// field the inventory knows must match exactly; `home` must be present.
         func identityProblems(_ identity: String?, _ vm: OrbStackVMHost) -> [String] {
             guard let identity else { return ["/etc/little-ci/identity is missing or unreadable"] }
             var fields: [String: String] = [:]
@@ -275,8 +264,6 @@ public enum Assessor {
 
         // MARK: Runners
 
-        /// The local runner is this fleet's: its `.runner` names this target and this exact runner.
-        /// Plans that start, stop or retire a launchd service require it.
         func owns(_ local: RunnerServiceFacts?, _ name: String) -> Bool {
             local?.registeredURL == inventory.github.registrationURL && local?.registeredName == name
         }
@@ -394,8 +381,6 @@ public enum Assessor {
             }
         }
 
-        /// A runner numbered like a declared one (`mac-check-4` next to `mac-check-1`, or a little-ci
-        /// fleet's `<prefix>-<n>`) that carries every one of that family's own labels, not just a shared one.
         func belongsToDeclaredFamily(_ remote: GitHubRunner) -> Bool {
             let generic: Set<String> = ["self-hosted", "macOS", "Linux", "ARM64", "X64", "little-ci"]
             var families: [(prefix: String, labels: Set<String>)] = []
@@ -465,8 +450,6 @@ public enum Assessor {
 }
 
 extension Inventory {
-    /// GitHub runners that belong to this fleet: an exact declared name that carries every declared label and,
-    /// in organization scope, sits in the configured runner group (unknown membership counts as outside it).
     func declaredRunners(in github: GitHubSnapshot) -> [GitHubRunner] {
         let declared = Dictionary(hosts.flatMap { host in host.runners.map { ($0.name, Set($0.labels)) } }, uniquingKeysWith: { first, _ in first })
         return github.runners.filter { runner in
@@ -475,7 +458,6 @@ extension Inventory {
         }
     }
 
-    /// This fleet's runners that serve the check pool.
     func checkRunners(in github: GitHubSnapshot) -> [GitHubRunner] {
         declaredRunners(in: github).filter { $0.labelNames.contains(queue.checkLabel) }
     }

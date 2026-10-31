@@ -1,11 +1,9 @@
 import Foundation
 
-/// Per-Mac choices that are not part of the shared inventory.
 public struct AppSettings: Codable, Sendable, Equatable {
     public var lentHosts: Set<String> = []
     public var localAPIEnabled = true
     public var notificationsEnabled = false
-    /// Hosts whose notifications are paused until a time (history and in-app findings continue).
     public var maintenanceUntil: [String: Date] = [:]
 
     public init() {}
@@ -22,7 +20,6 @@ public struct AppSettings: Codable, Sendable, Equatable {
 
 public enum DataSource: String, Codable, Sendable, CaseIterable { case live, demo }
 
-/// What the UI and the local API read: one consistent snapshot.
 public struct FleetState: Codable, Sendable, Equatable {
     public var source: DataSource
     public var observations: FleetObservations
@@ -32,7 +29,6 @@ public struct FleetState: Codable, Sendable, Equatable {
     public var settings: AppSettings
 }
 
-/// observe (GitHub and probes) -> assess against the inventory -> publish. Never writes to a host or GitHub.
 public actor FleetMonitor {
     public static let githubInterval: TimeInterval = 20
     public static let probeInterval: TimeInterval = 60
@@ -54,7 +50,6 @@ public actor FleetMonitor {
     private var hostObservations: [String: HostObservation] = [:]
     private var lastPowerLog: [String: Date] = [:]
     private var ledgerSummary = LedgerSummary.empty
-    /// Completed runs already in the ledger, by run ID, at the update time they were read.
     private var ledgeredRuns: [Int: Date?]?
     static let ledgerWindow: TimeInterval = 7 * 86_400
     private var assessment: Assessment?
@@ -89,7 +84,6 @@ public actor FleetMonitor {
         loops = []
     }
 
-    /// Reads GitHub and every host now.
     public func refreshNow() async {
         async let github: Void = readGitHub()
         async let hosts: Void = probeHosts()
@@ -114,7 +108,6 @@ public actor FleetMonitor {
         await assessAndPublish()
     }
 
-    /// Runs a reviewed plan, records the outcome as an event, and reads the fleet again.
     public func execute(_ review: PlanReview) async -> PlanOutcome {
         let outcome = await executor.execute(review, observations: currentObservations())
         lastOutcome = outcome
@@ -176,7 +169,6 @@ public actor FleetMonitor {
             return collected
         }
         for observation in results {
-            // A probe without the power log keeps the power events from the last one that had it.
             var observation = observation
             if case .reached(var facts) = observation.outcome, facts.recentPowerEvents.isEmpty,
                let earlier = previous[observation.hostID]?.facts?.recentPowerEvents {
@@ -190,19 +182,16 @@ public actor FleetMonitor {
         await assessAndPublish()
     }
 
-    /// Records finished jobs with their failure class, so service levels come from real jobs.
     private func updateLedger() async {
         let target = inventory.github
         do {
             var known: [Int: Date?]
             if let ledgeredRuns { known = ledgeredRuns } else { known = await ledger.processedRuns() }
-            // Every completed run in the reporting window, newest first, so a busy hour or a stopped app leaves no gap.
             let since = Date().addingTimeInterval(-Self.ledgerWindow).formatted(.iso8601.year().month().day())
             var runs: [WorkflowRun] = []
             for page in 1...10 {
                 let batch = try await github.runs(target, query: "status=completed&created=%3E%3D\(since)&exclude_pull_requests=true&per_page=100&page=\(page)")
                 runs += batch
-                // Stop at the end, or at a page with nothing new: after the first backfill a minute costs one page.
                 if batch.count < 100 || Self.runsNeedingJobs(batch, ledgered: known).isEmpty { break }
             }
             for run in Self.runsNeedingJobs(runs, ledgered: known) {
@@ -230,14 +219,10 @@ public actor FleetMonitor {
         await assessAndPublish()
     }
 
-    /// Finished jobs that ran on one of this fleet's declared runners. Hosted runners and other
-    /// fleets would skew the failure shares and queue waits.
     static func fleetJobs(_ jobs: [WorkflowJob], inventory: Inventory) -> [WorkflowJob] {
         jobs.filter { $0.tookRunner && $0.conclusion != nil && $0.runnerName.flatMap(inventory.host(ofRunner:)) != nil }
     }
 
-    /// A rerun updates its run, so a run is read again only when its update time changed.
-    /// Skipped runs never took a runner, so they are not read at all.
     static func runsNeedingJobs(_ runs: [WorkflowRun], ledgered: [Int: Date?]) -> [WorkflowRun] {
         runs.filter { run in
             guard run.conclusion != "skipped" else { return false }

@@ -1,11 +1,9 @@
 import Foundation
 
-/// One finished job as the app saw it, with why it failed when it did.
 public struct LedgerEntry: Codable, Sendable, Equatable {
     public var job: WorkflowJob
     public var workflow: String
     public var failure: FailureClass?
-    /// The run's update time when its jobs were read; a later update (a rerun) reads them again.
     public var runUpdatedAt: Date?
 
     public init(job: WorkflowJob, workflow: String, failure: FailureClass?, runUpdatedAt: Date? = nil) {
@@ -16,7 +14,6 @@ public struct LedgerEntry: Codable, Sendable, Equatable {
     }
 }
 
-/// The measured inputs for service levels over one window.
 public struct LedgerSummary: Codable, Sendable, Equatable {
     public var windowStart: Date?
     public var checkQueueWaits: [TimeInterval]
@@ -31,7 +28,6 @@ public struct LedgerSummary: Codable, Sendable, Equatable {
     public var judgedFailures: Int { machineFailures + codeFailures + unsureFailures }
 }
 
-/// Finished jobs, appended as JSON lines to `jobs.jsonl`. Kept so a week of real use can be reported.
 public actor JobLedger {
     private let url: URL
     private var entries: [Int: LedgerEntry] = [:]
@@ -47,7 +43,6 @@ public actor JobLedger {
 
     public func contains(jobID: Int) -> Bool { entries[jobID] != nil }
 
-    /// Runs whose jobs are recorded, at the update time they were read.
     public func processedRuns() -> [Int: Date?] {
         var runs: [Int: Date?] = [:]
         for entry in entries.values {

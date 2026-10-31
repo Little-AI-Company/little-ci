@@ -1,13 +1,8 @@
 import Foundation
 
-/// Versioned, read-only probe scripts, one per host kind. Each runs in one shell (local or one SSH
-/// session), prints one JSON object, and installs nothing. Every section is a command's exit code and
-/// its output in base64, so arbitrary text crosses the boundary intact; `ProbeParser` interprets it.
-/// Inputs travel as shell assignments at the top of the script on stdin, never as command-line arguments.
 public enum ProbeScript {
     public static let version = 1
 
-    /// The script for a host, with its inputs assigned. Names are validated by `Inventory.validate()`.
     public static func script(for host: HostSpec, includePowerLog: Bool) -> String {
         let runnerNames = host.runners.map(\.name).joined(separator: " ")
         switch host.kind {
@@ -33,7 +28,6 @@ public enum ProbeScript {
         }.joined()
     }
 
-    /// `section NAME COMMAND...` records one command; `finish` closes the JSON object.
     static let common = #"""
     set -u
     export LC_ALL=C
@@ -90,7 +84,6 @@ public enum ProbeScript {
 
     """#
 
-    /// Runs as an ordinary user. In OrbStack it runs inside the guest; on a server, over SSH.
     static let linuxSystemd = #"""
     section identity sh -c 'hostname; id -u; . /etc/os-release && echo "$VERSION_ID"'
     section loadavg sh -c 'nproc; cat /proc/loadavg'
@@ -114,7 +107,6 @@ public enum ProbeScript {
 
     """#
 
-    /// Runs on the Mac: the VM's OrbStack settings, then the Linux probe inside the guest.
     static let orbstackHost = #"""
     PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
     export ORB_MACHINE GUEST_USER GUEST_PROBE

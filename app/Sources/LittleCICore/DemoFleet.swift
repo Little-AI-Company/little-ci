@@ -1,7 +1,5 @@
 import Foundation
 
-/// A fictional fleet (`demo-*`, `acme/widgets`) that runs through the same assessment as live data.
-/// It shows one of each 2026-10-20 incident. Demo state never touches the journal, the ledger or a host.
 public enum DemoFleet {
     public static func state(now: Date = Date()) -> FleetState {
         let observations = self.observations(now: now)

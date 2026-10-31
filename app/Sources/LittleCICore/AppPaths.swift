@@ -1,6 +1,5 @@
 import Foundation
 
-/// Where the app keeps its inventory, event journal and job ledger on this Mac.
 public enum AppPaths {
     public static var directory: URL {
         if let override = ProcessInfo.processInfo.environment["LITTLE_CI_HOME"] { return URL(fileURLWithPath: override) }

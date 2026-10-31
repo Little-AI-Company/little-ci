@@ -52,7 +52,6 @@ struct DetailsWindow: View {
     }
 }
 
-/// A plain bold heading: section titles are primary text, not gray captions.
 struct Heading: View {
     let text: String
     init(_ text: String) { self.text = text }
@@ -281,7 +280,6 @@ struct EventsPane: View {
     }
 }
 
-/// Shows the exact commands, their effect and preconditions. Runs only on the Run button.
 struct PlanReviewWindow: View {
     let store: FleetStore
     @State private var confirmedTwice = false
@@ -311,7 +309,6 @@ struct PlanReviewWindow: View {
                     Button("Cancel") { store.review = nil }.keyboardShortcut(.cancelAction)
                     Spacer()
                     if store.runningPlanID == plan.id { ProgressView().controlSize(.small) }
-                    // No default-button shortcut: Return must never run a plan, some of which cannot be undone.
                     Button("Run") { store.run(review) }
                         .disabled(store.runningPlanID != nil || (plan.requiresSecondConfirmation && !confirmedTwice) || store.isDemo)
                 }

@@ -1,6 +1,5 @@
 import Foundation
 
-/// Reads and writes GitHub's REST API. The token comes from the `gh` login and stays in memory.
 public actor GitHubClient {
     public enum ClientError: Error, Equatable, CustomStringConvertible {
         case noToken(String)
@@ -19,7 +18,6 @@ public actor GitHubClient {
     private var token: String?
     public private(set) var rateLimitRemaining: Int?
 
-    // Values that change slowly are cached for a few minutes.
     private var pullRequestCache: (byBranch: [String: PullRequestState], fetchedAt: Date)?
     private var toolchainCache: (value: ToolchainRequirement?, fetchedAt: Date)?
     private var redMainCache: (runID: Int, jobs: [String])?
@@ -39,7 +37,6 @@ public actor GitHubClient {
 
     // MARK: Snapshot
 
-    /// `fresh` skips every cache: plan execution reads pull-request state, group membership and red main again.
     public func snapshot(for inventory: Inventory, now: Date = Date(), fresh: Bool = false) async throws -> GitHubSnapshot {
         if fresh {
             pullRequestCache = nil
@@ -98,7 +95,6 @@ public actor GitHubClient {
         return all
     }
 
-    /// A job's check-run annotations. Some failures (a full disk that stops the log) appear only here.
     public func jobAnnotations(_ target: GitHubTarget, jobID: Int) async throws -> [String] {
         struct Annotation: Decodable { var message: String }
         let annotations: [Annotation] = try await get("\(target.repositoryPath)/check-runs/\(jobID)/annotations?per_page=50")
@@ -118,8 +114,6 @@ public actor GitHubClient {
         return names
     }
 
-    /// Recently updated pull requests by head branch. Runs carry `pull_requests` for only some PR runs
-    /// (99 of 317 on 2026-10-20), so the branch is the reliable link.
     private func pullRequestsByBranch(_ target: GitHubTarget, now: Date) async throws -> [String: PullRequestState] {
         if let cached = pullRequestCache, now.timeIntervalSince(cached.fetchedAt) < 300 { return cached.byBranch }
         struct Pull: Decodable {
@@ -142,7 +136,6 @@ public actor GitHubClient {
         return byBranch
     }
 
-    /// Runner names in the configured organization runner group; nil in repository scope.
     private func runnerGroupMembers(_ target: GitHubTarget, now: Date) async throws -> Set<String>? {
         guard target.scope == .organization, let groupName = target.runnerGroup else { return nil }
         if let groupCache, now.timeIntervalSince(groupCache.fetchedAt) < 300 { return groupCache.members }
@@ -162,7 +155,6 @@ public actor GitHubClient {
         return members
     }
 
-    /// Bun from package.json's packageManager, Node from engines.node, on the default branch.
     private func toolchain(_ target: GitHubTarget, now: Date) async throws -> ToolchainRequirement? {
         if let toolchainCache, now.timeIntervalSince(toolchainCache.fetchedAt) < 600 { return toolchainCache.value }
         struct Contents: Decodable { var content: String }
@@ -245,7 +237,6 @@ public actor GitHubClient {
     }
 }
 
-/// Job logs redirect to blob storage. Forwarding GitHub's token there is a leak and is rejected (401).
 final class RedirectWithoutCredentials: NSObject, URLSessionTaskDelegate, Sendable {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest) async -> URLRequest? {

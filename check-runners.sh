@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# check-runners.sh — health check for this Little-CI fleet only.
-#   exit 0  GREEN — every expected fleet runner is online with required labels
-#   exit 1  RED   — an expected runner is missing, offline, or missing labels
-#   exit 2  DARK  — could not read the runners API (gh not authed / no GH_TOKEN)
-#
-# Needs gh authenticated with repository Administration read access or
-# organization Self-hosted runners read access. Reads no secrets of its own.
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"

@@ -1,20 +1,4 @@
 #!/usr/bin/env bash
-# install-runners.sh — download, register, and service-install N GitHub Actions
-# self-hosted runners on this box. Idempotent: matching local registrations are
-# preserved, their exact generated services are configured, and services start.
-# Server-side labels and organization runner groups are never changed implicitly.
-#
-# Needs a SHORT-LIVED registration token in REGTOKEN. Get one with the gh CLI:
-#     gh api --method POST repos/OWNER/REPO/actions/runners/registration-token --jq .token
-# or from the web UI: repo/org Settings > Actions > Runners > New self-hosted runner.
-# The token expires in ~1 hour and is NOT a personal access token — never commit it.
-#
-# Run as the RUNNER_USER (the account the services will run as; it needs
-# passwordless sudo, because svc.sh installs a systemd unit):
-#     REGTOKEN=xxxxx ./install-runners.sh
-#
-# Run provision-box.sh FIRST so host scratch and cleanup policy exist. This
-# installer binds each exact generated service to its per-fleet scratch path.
 set -euo pipefail
 set +x
 
@@ -24,8 +8,6 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
   exit 1
 }
 
-# Explicit environment overrides win over config.env for these execution-mode
-# controls. The OrbStack wrapper relies on both guarantees.
 runner_arch_override_set="${RUNNER_ARCH+x}"
 runner_arch_override="${RUNNER_ARCH:-}"
 skip_service_override_set="${SKIP_SERVICE_INSTALL+x}"
@@ -112,8 +94,6 @@ command -v curl >/dev/null || { echo "curl is required" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 is required" >&2; exit 1; }
 command -v tar >/dev/null || { echo "tar is required" >&2; exit 1; }
 
-# linux-x64 on amd64 boxes; linux-arm64 on Apple Silicon VMs / Ampere.
-# Override with RUNNER_ARCH if uname is lying (rare).
 if [ -z "${RUNNER_ARCH:-}" ]; then
   case "$(uname -m)" in
     x86_64|amd64) RUNNER_ARCH=linux-x64 ;;

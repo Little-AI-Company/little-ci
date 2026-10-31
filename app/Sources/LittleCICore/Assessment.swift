@@ -7,7 +7,6 @@ public enum Severity: String, Codable, Sendable, Comparable, CaseIterable {
     public static func < (lhs: Severity, rhs: Severity) -> Bool { lhs.rank < rhs.rank }
 }
 
-/// What a finding or event is about.
 public enum Subject: Codable, Sendable, Hashable, CustomStringConvertible {
     case fleet
     case host(String)
@@ -24,9 +23,7 @@ public enum Subject: Codable, Sendable, Hashable, CustomStringConvertible {
     }
 }
 
-/// One thing that is wrong now, the evidence for it, and what to do.
 public struct Finding: Codable, Sendable, Equatable, Identifiable {
-    /// Stable across observations while the condition lasts, so events record start and end once.
     public var id: String
     public var severity: Severity
     public var subject: Subject
@@ -47,13 +44,10 @@ public struct Finding: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// A token the executor obtains in memory and writes to one command's standard input.
 public enum TokenKind: String, Codable, Sendable, CaseIterable { case registration, removal }
 
 public enum PlanAction: Codable, Sendable, Equatable {
-    /// A shell command on a host (locally or over SSH). With a token, its first stdin line is the token.
     case hostCommand(hostID: String, command: String, token: TokenKind?)
-    /// A local command on this Mac in a working directory (little-ci's Mac wrappers).
     case localCommand(CommandInvocation)
     case cancelRun(id: Int)
     case deleteRunnerRegistration(id: Int, name: String)
@@ -69,7 +63,6 @@ public struct PlanStep: Codable, Sendable, Equatable {
     }
 }
 
-/// A condition that must hold, re-read from GitHub and the host, immediately before a plan runs.
 public enum Precondition: Codable, Sendable, Hashable, CustomStringConvertible {
     case runnerIdle(name: String)
     case runnerOffline(name: String)
@@ -92,7 +85,6 @@ public enum Precondition: Codable, Sendable, Hashable, CustomStringConvertible {
     }
 }
 
-/// Exact commands, their effect, and what must be true first. Runs only after the user confirms.
 public struct Plan: Codable, Sendable, Equatable, Identifiable {
     public var id: String
     public var title: String
@@ -100,7 +92,6 @@ public struct Plan: Codable, Sendable, Equatable, Identifiable {
     public var effect: String
     public var steps: [PlanStep]
     public var preconditions: [Precondition]
-    /// Platform runs and machine deletion ask twice.
     public var requiresSecondConfirmation: Bool
 
     public init(id: String, title: String, subject: Subject, effect: String, steps: [PlanStep],
@@ -142,12 +133,10 @@ public struct ServiceLevel: Codable, Sendable, Equatable, Identifiable {
     public var name: String
     public var target: String
     public var measured: String
-    /// Nil when there is not enough data yet.
     public var met: Bool?
     public var basis: String
 }
 
-/// Which kind of work a run is, for the queue pane.
 public enum QueueLane: String, Codable, Sendable, CaseIterable {
     case main, pullRequest, platform, performance, other
 
@@ -180,7 +169,6 @@ public struct QueueEntry: Codable, Sendable, Equatable, Identifiable {
     public var id: Int { run.id }
 }
 
-/// Everything the UI and the API show, derived without I/O from one set of observations.
 public struct Assessment: Codable, Sendable, Equatable {
     public var assessedAt: Date
     public var findings: [Finding]

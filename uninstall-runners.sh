@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Unregister and remove only explicitly selected runners from one Little-CI fleet.
 set -euo pipefail
 set +x
 

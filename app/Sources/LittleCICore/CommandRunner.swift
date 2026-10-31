@@ -26,7 +26,6 @@ public struct CommandInvocation: Sendable, Equatable, Codable {
         self.workingDirectory = workingDirectory
     }
 
-    /// The command as a person would type it, for plan review and recovery text.
     public var displayText: String {
         let words = ([executable] + arguments).map { word in
             word.allSatisfy({ $0.isLetter || $0.isNumber || "-_./:=@,+".contains($0) }) ? word : "'\(word.replacingOccurrences(of: "'", with: "'\\''"))'"
@@ -35,7 +34,6 @@ public struct CommandInvocation: Sendable, Equatable, Codable {
     }
 }
 
-/// The process boundary. Tests replace it; nothing else in the core starts processes.
 public protocol CommandRunning: Sendable {
     func run(_ invocation: CommandInvocation, standardInput: Data?, timeout: Duration) async throws -> CommandResult
 }
@@ -85,8 +83,6 @@ public struct ProcessCommandRunner: CommandRunning {
 
         let seconds = Double(timeout.components.seconds) + Double(timeout.components.attoseconds) / 1e18
         if reader.wait(timeout: .now() + seconds) == .timedOut {
-            // SIGTERM, then SIGKILL after 5 s; return only once the process has exited, so a retry
-            // can never overlap a step that is still running.
             process.terminate()
             let deadline = Date().addingTimeInterval(5)
             while process.isRunning, Date() < deadline { usleep(50_000) }
@@ -101,10 +97,8 @@ public struct ProcessCommandRunner: CommandRunning {
 }
 
 extension HostAccess {
-    /// A shell on this host that reads its script from standard input.
     public var shellInvocation: CommandInvocation { invocation(remoteCommand: "/bin/bash -s") }
 
-    /// One command on this host. Remote commands go through OpenSSH with agent and port forwarding off.
     public func invocation(remoteCommand: String) -> CommandInvocation {
         switch self {
         case .local:
@@ -118,7 +112,6 @@ extension HostAccess {
     }
 }
 
-/// Runs one probe round trip against one host and returns a timestamped observation.
 public struct HostProber: Sendable {
     public var runner: any CommandRunning
 
@@ -144,7 +137,6 @@ public struct HostProber: Sendable {
                                lastFacts: outcome.facts ?? previous?.facts ?? previous?.lastFacts)
     }
 
-    /// A VM is reached through the Mac that runs it.
     public static func access(for host: HostSpec, in inventory: Inventory) -> HostAccess {
         if case .orbstackVM(let vm) = host.kind, let parent = inventory.host(vm.parentHost) { return parent.access }
         return host.access

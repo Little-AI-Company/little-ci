@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Read-only Mac-side diagnostics for one OrbStack Little-CI fleet.
 set -u
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"

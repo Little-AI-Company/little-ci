@@ -11,8 +11,6 @@ reject_persisted_github_credentials() {
     }
 }
 
-# Validate the configured GitHub scope and expose its REST API target.
-# Call after loading config.env.
 github_target_init() {
   GITHUB_SCOPE="${GITHUB_SCOPE:-repository}"
 
@@ -66,8 +64,6 @@ github_target_init() {
   esac
 }
 
-# Resolve one collision-resistant fleet prefix shared by every script. A manual
-# prefix remains available for existing installations and advanced operators.
 github_fleet_init() {
   local normalized_github_target
 
