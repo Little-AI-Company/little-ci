@@ -2,7 +2,6 @@ import Foundation
 import Testing
 @testable import LittleCICore
 
-/// Each 2026-10-20 incident, replayed from recorded output, must produce the right finding.
 @Suite("2026-10-20 incident replays")
 struct IncidentReplayTests {
     let m1 = ProbeFixture("m1-macos")
@@ -21,7 +20,6 @@ struct IncidentReplayTests {
 
     @Test("1. M1 boot disk at 98%")
     func bootDiskFull() throws {
-        // The real df line for the Data volume, with available set to 2% of its size.
         let df = m1.section("df").split(separator: "\n").map { line -> String in
             guard line.hasSuffix("/System/Volumes/Data") else { return String(line) }
             return "/dev/disk3s5 971350180 951923177 19427003 98% /System/Volumes/Data"
@@ -64,7 +62,6 @@ struct IncidentReplayTests {
 
     @Test("4. GitHub reports a runner offline and busy while launchd has it unloaded")
     func offlineBusyWhileUnloaded() throws {
-        // M4's real `launchctl print` output for its unloaded runner, applied to ci-m4-check-2.
         let unloaded = m4.section("runner.ci-m4-candidate-1.service")
             .replacingOccurrences(of: "ci-m4-candidate-1", with: "ci-m4-check-2")
         let probe = m4.replacing("runner.ci-m4-check-2.service", with: unloaded, exit: 1)

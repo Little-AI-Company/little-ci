@@ -2,7 +2,6 @@ import Foundation
 import Testing
 @testable import LittleCICore
 
-/// Findings from the Codex review of pull request 7.
 @Suite("Codex review of the menu bar app")
 struct CodexReviewTests {
     static let vm = OrbStackVMHost(parentHost: "m1", machine: "little-ci-example-owner-example-repo-studio", runnerUser: "deploy",
@@ -20,7 +19,6 @@ struct CodexReviewTests {
         return (inventory, HostObservation(hostID: "vm", attemptedAt: Fixture.now, outcome: .reached(facts)))
     }
 
-    /// The format little-ci's `little_ci_machine_identity` writes (lib/orbstack-machine.sh).
     static let identity = """
         machine=little-ci-example-owner-example-repo-studio
         scope=repository
@@ -79,7 +77,7 @@ struct CodexReviewTests {
         for index in runs.indices { runs[index].updatedAt = earlier }
         let ledgered: [Int: Date?] = [runs[0].id: earlier, runs[1].id: earlier]
         #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[2].id])
-        runs[1].updatedAt = Fixture.now  // a rerun updated it
+        runs[1].updatedAt = Fixture.now
         #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[1].id, runs[2].id])
         runs[2].conclusion = "skipped"
         #expect(FleetMonitor.runsNeedingJobs(runs, ledgered: ledgered).map(\.id) == [runs[1].id], "skipped runs never took a runner")

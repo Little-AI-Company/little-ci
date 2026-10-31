@@ -211,3 +211,28 @@ script is in the [README](../README.md) and the [app README](../app/README.md).
   writes zero as "in 0 sec.".
 - The schema decoder overrides the `decodeIfPresent` overloads because the
   protocol's default versions call `decode`, which would mark the key required.
+
+## Tests
+
+- `tests/run.sh` unsets every `config.env` variable before the first test, so
+  the caller's environment cannot leak in: GitHub Actions, for one, exports
+  `RUNNER_ARCH=X64`.
+- `expected_job_dependency_packages` is a copy of the job package list kept
+  apart from `provision-job-dependencies.sh`, so a drifted list fails the
+  tests. Its Playwright entries are the v1.59.1 `install-deps chromium` set for
+  ubuntu24.04 (the `chromium` group plus the `tools` group it always adds);
+  refresh it with the script's lists.
+- `rewrite_matching_lines` edits fixtures with `awk -v` instead of `sed -i`:
+  BSD `sed -i` needs a backup suffix and ignores `\n` in replacements, while
+  `awk -v` expands `\n` on GNU and BSD, so fixture edits behave the same on a
+  Mac and on Linux.
+- The deb822 cases pin apt's StringToBool for `Enabled`:
+  `disabled-numeric-zeros` covers whole values that `strtol(..., 0)` reads as
+  zero, including the C23 `0b` prefix that Ubuntu 24.04 glibc accepts; the
+  `enabled-token-*` cases are nonzero or partly parsed numbers, which leave the
+  stanza enabled, so its missing `URIs` must still be rejected.
+- `duplicate-components` and `duplicate-continued-components` pin that apt
+  uses the last occurrence of a field, with its continuation lines.
+- The OrbStack job dependency test checks that `provision-job-dependencies.sh`
+  runs after the deb822 source step (the last stdin script) and the runtime
+  copy, because `ffmpeg` and `ripgrep` need Ubuntu `universe`.

@@ -22,7 +22,6 @@ actor FakeGitHub: GitHubAccess {
     func deleteRunner(_ target: GitHubTarget, id: Int) async throws {}
 }
 
-/// Answers probes with a recorded probe; records every other command with what it got on stdin.
 final class RecordingRunner: CommandRunning, @unchecked Sendable {
     struct Call { var invocation: CommandInvocation; var standardInput: String }
     private let lock = NSLock()

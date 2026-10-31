@@ -2,7 +2,6 @@ import Foundation
 import Testing
 @testable import LittleCICore
 
-/// A GitHub whose runner list marks one runner busy from the Nth read on.
 actor ShiftingGitHub: GitHubAccess {
     let snapshotValue: GitHubSnapshot
     let becomesBusy: String

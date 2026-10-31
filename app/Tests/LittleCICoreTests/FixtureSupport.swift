@@ -1,7 +1,6 @@
 import Foundation
 @testable import LittleCICore
 
-/// Fixtures are excerpts of real output recorded on 2026-10-20 (see Fixtures/README.md).
 enum Fixture {
     static let directory = Bundle.module.url(forResource: "Fixtures", withExtension: nil)!
 
@@ -12,7 +11,6 @@ enum Fixture {
         try! GitHubClient.decoder.decode(type, from: data(path))
     }
 
-    /// The moment the fixtures describe.
     static let now = try! Date("2026-10-20T16:30:00Z", strategy: .iso8601)
 
     static func runner(_ name: String, labels: [String]) -> RunnerSpec { RunnerSpec(name: name, labels: labels) }
@@ -39,10 +37,8 @@ enum Fixture {
             return policy
         }())
 
-    /// package.json on 2026-10-20: `"packageManager": "bun@1.3.14"`, `"engines": { "node": ">=24.0.0" }`.
     static let toolchain = ToolchainRequirement(bunVersion: "1.3.14", minimumNodeMajor: 24)
 
-    /// GitHub's real runner list, with each runner's status and busy flag set for the scenario.
     static func runners(online: Set<String>, busy: Set<String> = []) -> [GitHubRunner] {
         struct Page: Decodable { var runners: [GitHubRunner] }
         return decode(Page.self, "github/runners-2026-10-20.json").runners.map { runner in
@@ -63,7 +59,6 @@ enum Fixture {
     static let m4CheckRunners: Set<String> = ["ci-m4-check-1", "ci-m4-check-2"]
 }
 
-/// A real recorded probe, with chosen sections replaced by other real recorded outputs.
 struct ProbeFixture {
     var envelope: [String: Any]
 

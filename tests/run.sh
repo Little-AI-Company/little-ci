@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Each test sets the configuration it needs. Clear the config.env contract so the
-# caller's environment cannot leak in: GitHub Actions exports RUNNER_ARCH=X64.
 unset EXPECTED_RUNNERS FLEET_ID GITHUB_SCOPE GITHUB_URL ORB_CPUS ORB_DISK ORB_MACHINE \
   ORB_MEMORY PG_DB PG_MAX_CONNECTIONS PG_PASSWORD PG_SHARED_BUFFERS PG_USER REAP_AGE \
   REMOVE_LEGACY_SWAPFILES RUNNER_ARCH RUNNER_COUNT RUNNER_GROUP RUNNER_LABELS \
@@ -1033,7 +1031,6 @@ test_orbstack_guest_skips_swapfile_commands() {
 MOCK
   cat > "$sandbox_dir/bin/awk" <<'MOCK'
 #!/usr/bin/env bash
-# Simulate an OrbStack guest without legacy Little-CI fstab entries.
 exit 0
 MOCK
   cat > "$sandbox_dir/bin/sysctl" <<'MOCK'
@@ -2309,10 +2306,6 @@ test_orbstack_transfers_use_explicit_allowlist() {
   assert_file_contains "$sandbox_dir/archive-inventory.log" 'uninstall-runners.sh'
 }
 
-# Ubuntu packages Little Worker's trusted read-only jobs need. The Playwright
-# entries are the v1.59.1 `install-deps chromium` set for ubuntu24.04 (the
-# chromium group plus the tools group it always adds), kept independent of the
-# script so a drifted copy fails here.
 expected_job_dependency_packages=(
   ffmpeg ripgrep build-essential pkg-config
   libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2
@@ -2373,9 +2366,8 @@ printf '%s %s\n' "$(basename "$0")" "$*" >> "${MOCK_COMMAND_LOG:?}"
 printf '%s version mock\n' "$(basename "$0")"
 MOCK
   done
-  # Fail loudly if provisioning reaches for browser or runtime downloads.
-  for command_name in curl wget npx npm node bun playwright snap; do
-    cat > "$sandbox_dir/bin/$command_name" <<'MOCK'
+  for forbidden_command in curl wget npx npm node bun playwright snap; do
+    cat > "$sandbox_dir/bin/$forbidden_command" <<'MOCK'
 #!/usr/bin/env bash
 printf 'FORBIDDEN %s %s\n' "$(basename "$0")" "$*" >> "${MOCK_COMMAND_LOG:?}"
 exit 97
@@ -2507,8 +2499,6 @@ test_job_dependencies_load_owning_config_without_changing_packages() {
   new_sandbox
   install_job_dependency_mocks amd64
   mkdir -p "$sandbox_dir/elsewhere"
-  # The owning checkout's trusted config is loaded, but it must not be able to
-  # replace the fixed package authority, even by assigning its variable names.
   cat > "$sandbox_dir/repo/config.env" <<'CONFIG'
 printf 'owning\n' >> "${CONFIG_LOAD_LOG:?}"
 job_tool_packages=(config-supplied-package)
@@ -2544,7 +2534,6 @@ CONFIG
   [ "$actual_requested" = "$expected_packages" ] || fail 'config.env changed the required package list'
   assert_contains "$output" 'CI job dependencies ready'
 
-  # Like every other script, the owning config must not persist GitHub credentials.
   printf 'GH_TOKEN=do-not-leak-config-token\n' >> "$sandbox_dir/repo/config.env"
   : > "$sandbox_dir/command.log"
   set +e
@@ -2568,9 +2557,6 @@ CONFIG
   esac
 }
 
-# Portable in-place line rewrite for test fixtures. BSD sed -i demands a
-# backup suffix and ignores \n in replacements; awk -v expands \n on both
-# GNU and BSD, so fixture edits behave the same on a Mac and in CI.
 rewrite_matching_lines() {
   local target="$1" line_regex="$2" replacement="$3" rewritten
   rewritten="$(mktemp "$target.XXXXXX")"
@@ -2739,16 +2725,12 @@ SOURCES
       printf 'Types: deb\nURIs: file:/srv/local-repo\nSuites: ./ noble\nComponents: main\n' > "$ubuntu_sources"
       ;;
     disabled-numeric-zeros)
-      # apt StringToBool: a whole-value strtol(..., 0) result of 0 is false.
       write_main_only_ubuntu_sources "$ubuntu_sources"
-      # Ubuntu 24.04 glibc strtol also accepts the C23 0b binary prefix.
       for enabled_value in 00 +0 -0 0x0 0X00 0b0; do
         printf '\nTypes: deb\nEnabled: %s\n' "$enabled_value" >> "$ubuntu_sources"
       done
       ;;
     enabled-token-*)
-      # Nonzero or partially parsed numbers leave the stanza enabled, so its
-      # missing URIs must still be rejected.
       printf 'Types: deb\nEnabled: %s\nSuites: noble\nComponents: main\n' "${source_state#enabled-token-}" > "$ubuntu_sources"
       ;;
     empty-sources)
@@ -2767,7 +2749,6 @@ SOURCES
       cp "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.expected"
       ;;
     duplicate-components)
-      # apt uses the last occurrence of a field, including its continuations.
       printf 'Types: deb\nURIs: http://ports.ubuntu.com/ubuntu-ports/\nSuites: noble\nComponents: universe\nComponents: main\n' > "$ubuntu_sources"
       printf 'Types: deb\nURIs: http://ports.ubuntu.com/ubuntu-ports/\nSuites: noble\nComponents: universe\nComponents: main universe\n' > "$sandbox_dir/ubuntu.sources.expected"
       ;;
@@ -2868,7 +2849,6 @@ MOCK
       if [[ "$source_state" =~ ^(empty-sources|comment-only-sources|empty-types|archive-path-case)$ ]]; then
         cmp -s "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.before" || fail "inactive sources changed"
       fi
-      # Sources are repaired and validated before any guest apt use.
       assert_file_order "$sandbox_dir/command.log" 'guest-script ubuntu.sources' 'guest-script apt-get'
       assert_file_order "$sandbox_dir/command.log" 'guest-script ubuntu.sources' './provision-job-dependencies.sh'
       ;;
@@ -2909,8 +2889,6 @@ test_orbstack_provisioning_installs_job_dependencies_in_guest() {
   status=$?
   set -e
   assert_status 0 "$status"
-  # The job set needs Ubuntu universe, so it must follow the deb822 source step
-  # (the last stdin script) and the explicit runtime copy.
   assert_file_contains "$sandbox_dir/orbctl-stdin.log" 'Components: main restricted universe multiverse'
   assert_file_contains "$sandbox_dir/command.log" '-u root bash -c cd\ \"\$1\"\ \&\&\ ./provision-job-dependencies.sh bash /home/deploy/little-ci'
   assert_file_order "$sandbox_dir/command.log" 'tar -xzf - -C /home/deploy/little-ci' './provision-job-dependencies.sh'

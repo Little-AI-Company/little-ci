@@ -56,7 +56,6 @@ struct LocalAPITests {
     }
 }
 
-/// Enough of JSON Schema to check that every encoded key is declared and every required key is present.
 struct SchemaValidator {
     let schemas: [String: JSONValue]
 
@@ -73,7 +72,6 @@ struct SchemaValidator {
             return ["\(path): matches no oneOf branch; closest: \(results.min { $0.count < $1.count } ?? [])"]
         }
         if case .array(let parts)? = rule["allOf"] {
-            // allOf here is a payload plus its `type` tag: check the union of their properties.
             var merged: [String: JSONValue] = [:]
             for case .object(let part) in parts.map(resolve) {
                 if case .object(let properties)? = part["properties"] { merged.merge(properties) { first, _ in first } }
