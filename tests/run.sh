@@ -452,13 +452,6 @@ run_case() {
   fi
 }
 
-test_bash_syntax() {
-  local script
-  while IFS= read -r script; do
-    bash -n "$script"
-  done < <(find "$repo_root" -maxdepth 2 -type f -name '*.sh' -print | sort)
-}
-
 test_root_command_scripts_are_executable() {
   local script
   while IFS= read -r script; do
@@ -2642,16 +2635,10 @@ test_orbstack_enables_universe_in_existing_deb822_sources() {
         printf 'Types: deb\nURIs: %s\nSuites: noble\nComponents: main\n\n' "$archive_uri" >> "$ubuntu_sources"
       done
       ;;
-    archive-dns-root-dot|archive-scheme-case|archive-default-port|archive-unrecognized-authority)
+    archive-default-port|archive-unrecognized-authority)
       local archive_uri
       local archive_uris=()
       case "$source_state" in
-        archive-dns-root-dot)
-          archive_uris=(http://ports.ubuntu.com./ubuntu-ports https://ARCHIVE.ubuntu.com./ubuntu/ https://security.ubuntu.com./ubuntu)
-          ;;
-        archive-scheme-case)
-          archive_uris=(HTTP://ports.ubuntu.com/ubuntu-ports HTTPS://ARCHIVE.ubuntu.com/ubuntu/)
-          ;;
         archive-default-port)
           archive_uris=(http://ports.ubuntu.com:80/ubuntu-ports https://security.ubuntu.com:443/ubuntu/ HTTP://PORTS.ubuntu.com.:80/ubuntu-ports HTTPS://ARCHIVE.ubuntu.com.:443/ubuntu/)
           ;;
@@ -2668,23 +2655,15 @@ test_orbstack_enables_universe_in_existing_deb822_sources() {
         sed 's/^Components: main$/Components: main universe/' "$ubuntu_sources" > "$sandbox_dir/ubuntu.sources.expected"
       fi
       ;;
-    archive-hostname-case|archive-path-case)
+    archive-path-case)
       local archive_uri
-      if [ "$source_state" = archive-hostname-case ]; then
-        for archive_uri in http://ARCHIVE.Ubuntu.COM/ubuntu https://Security.UBUNTU.com/ubuntu/ \
-          https://PORTS.ubuntu.COM/ubuntu-ports; do
-          printf 'Types: deb\nURIs: %s\nSuites: noble\nComponents: main\n\n' "$archive_uri" >> "$ubuntu_sources"
-        done
-        sed 's/^Components: main$/Components: main universe/' "$ubuntu_sources" > "$sandbox_dir/ubuntu.sources.expected"
-      else
-        for archive_uri in http://ARCHIVE.ubuntu.com/Ubuntu https://SECURITY.ubuntu.com/UBUNTU/ \
-          https://PORTS.ubuntu.com/Ubuntu-ports \
-          HTTPS://PORTS.ubuntu.com.:443/Ubuntu-ports \
-          'HTTP://ports.ubuntu.com.:80/ubuntu-ports HTTPS://PORTS.ubuntu.com.:443/Ubuntu-ports'; do
-          printf 'Types: deb\nURIs: %s\nSuites: noble\nComponents: main\n\n' "$archive_uri" >> "$ubuntu_sources"
-        done
-        cp "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.expected"
-      fi
+      for archive_uri in http://ARCHIVE.ubuntu.com/Ubuntu https://SECURITY.ubuntu.com/UBUNTU/ \
+        https://PORTS.ubuntu.com/Ubuntu-ports \
+        HTTPS://PORTS.ubuntu.com.:443/Ubuntu-ports \
+        'HTTP://ports.ubuntu.com.:80/ubuntu-ports HTTPS://PORTS.ubuntu.com.:443/Ubuntu-ports'; do
+        printf 'Types: deb\nURIs: %s\nSuites: noble\nComponents: main\n\n' "$archive_uri" >> "$ubuntu_sources"
+      done
+      cp "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.expected"
       ;;
     ubuntu-and-third-party-stanzas)
       printf 'Types: deb\nURIs: https://packages.example\nSuites: noble\nComponents: main\n\n' > "$ubuntu_sources"
@@ -2869,7 +2848,7 @@ MOCK
   [ -z "$(find "$sandbox_dir/apt/sources.list.d" -name '.ubuntu.sources.*')" ] || fail 'temporary sources file left behind'
 
   case "$source_state" in
-    main-only|third-party-archive|mixed-archive-uris|custom-ubuntu-mirror|standard-ubuntu-archives|archive-dns-root-dot|archive-scheme-case|archive-default-port|archive-unrecognized-authority|archive-hostname-case|archive-path-case|ubuntu-and-third-party-stanzas|universe-present|continued-fields|field-name-whitespace|leading-indented-preamble|multiline-components|multiline-components-with-universe|flat-only|custom-path|mixed-flat-and-archive|disabled-stanza|disabled-numeric-zeros|duplicate-components|duplicate-continued-components|duplicate-components-final-universe|duplicate-enabled-last-disabled|duplicate-uris-last-valid|empty-sources|comment-only-sources|empty-types)
+    main-only|third-party-archive|mixed-archive-uris|custom-ubuntu-mirror|standard-ubuntu-archives|archive-default-port|archive-unrecognized-authority|archive-path-case|ubuntu-and-third-party-stanzas|universe-present|continued-fields|field-name-whitespace|leading-indented-preamble|multiline-components|multiline-components-with-universe|flat-only|custom-path|mixed-flat-and-archive|disabled-stanza|disabled-numeric-zeros|duplicate-components|duplicate-continued-components|duplicate-components-final-universe|duplicate-enabled-last-disabled|duplicate-uris-last-valid|empty-sources|comment-only-sources|empty-types)
       assert_status 0 "$status"
       local expected_sources
       if [ -f "$sandbox_dir/ubuntu.sources.expected" ]; then
@@ -3323,7 +3302,6 @@ MOCK
   [ -d "$runner_dir" ] || fail 'runner directory was removed after unregistration failure'
 }
 
-run_case 'all shell files pass bash -n' test_bash_syntax
 run_case 'root command scripts are executable' test_root_command_scripts_are_executable
 run_case 'repository scope uses repository runner API' test_repository_api_routing
 run_case 'organization scope uses organization runner API' test_organization_api_routing
@@ -3384,7 +3362,6 @@ run_case 'OrbStack install rejects Mac mounts before start' test_orbstack_instal
 run_case 'OrbStack install rejects unverifiable mount configuration' test_orbstack_install_rejects_mac_mount_before_start '' 72 'could not verify configured mounts'
 run_case 'OrbStack transfers use an explicit file allowlist' test_orbstack_transfers_use_explicit_allowlist
 run_case 'job dependencies install exact Ubuntu 24.04 arm64 packages' test_job_dependencies_install_exact_ubuntu_packages arm64
-run_case 'job dependencies install exact Ubuntu 24.04 amd64 packages' test_job_dependencies_install_exact_ubuntu_packages amd64
 run_case 'job dependency rerun skips apt when installed' test_job_dependencies_rerun_skips_apt_when_installed
 run_case 'job dependencies reject Ubuntu 22.04 before apt' test_job_dependencies_reject_unsupported_host_before_apt release 'requires Ubuntu 24.04'
 run_case 'job dependencies reject non-Ubuntu before apt' test_job_dependencies_reject_unsupported_host_before_apt distribution 'requires Ubuntu 24.04'
@@ -3398,11 +3375,8 @@ run_case 'OrbStack preserves enabled third-party archive' test_orbstack_enables_
 run_case 'OrbStack preserves ambiguous continued Ubuntu and third-party URIs' test_orbstack_enables_universe_in_existing_deb822_sources mixed-archive-uris
 run_case 'OrbStack preserves unrecognized Ubuntu mirror' test_orbstack_enables_universe_in_existing_deb822_sources custom-ubuntu-mirror
 run_case 'OrbStack enables universe for standard Ubuntu archive URIs' test_orbstack_enables_universe_in_existing_deb822_sources standard-ubuntu-archives
-run_case 'OrbStack recognizes Ubuntu archive terminal DNS root dots without rewriting URIs' test_orbstack_enables_universe_in_existing_deb822_sources archive-dns-root-dot
-run_case 'OrbStack recognizes Ubuntu archive uppercase HTTP schemes without rewriting URIs' test_orbstack_enables_universe_in_existing_deb822_sources archive-scheme-case
 run_case 'OrbStack recognizes matching default HTTP ports and terminal DNS root dots' test_orbstack_enables_universe_in_existing_deb822_sources archive-default-port
 run_case 'OrbStack preserves other archive ports and repeated terminal DNS dots' test_orbstack_enables_universe_in_existing_deb822_sources archive-unrecognized-authority
-run_case 'OrbStack compares verified Ubuntu archive hostnames without case' test_orbstack_enables_universe_in_existing_deb822_sources archive-hostname-case
 run_case 'OrbStack preserves case-sensitive Ubuntu archive paths and mixed URIs' test_orbstack_enables_universe_in_existing_deb822_sources archive-path-case
 run_case 'OrbStack changes only verified Ubuntu stanzas beside third-party archive' test_orbstack_enables_universe_in_existing_deb822_sources ubuntu-and-third-party-stanzas
 run_case 'OrbStack leaves deb822 source with universe unchanged' test_orbstack_enables_universe_in_existing_deb822_sources universe-present

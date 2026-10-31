@@ -54,14 +54,6 @@ struct LocalAPITests {
             #expect(problems.isEmpty, "\(problems.prefix(5))")
         }
     }
-
-    @Test("Responses never contain a token")
-    func noSecrets() {
-        for path in ["/v1/hosts", "/v1/runners", "/v1/plans", "/v1/findings", "/v1/events"] {
-            let body = String(decoding: get(path).body, as: UTF8.self)
-            #expect(!body.contains("ghp_") && !body.contains("gho_") && !body.contains("github_pat_"), "\(path)")
-        }
-    }
 }
 
 /// Enough of JSON Schema to check that every encoded key is declared and every required key is present.

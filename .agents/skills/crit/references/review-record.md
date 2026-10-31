@@ -1,6 +1,6 @@
 # Review record (format version 1)
 
-One JSON file holds one crit review: the original assessment, the fix selections, the fix rounds, and links to the commits that landed them. `scripts/review_record.py validate` is the authority; this page explains the rules. The test fixture in `scripts/test_review_record.py` is a complete valid example.
+One JSON file holds one crit review: the original assessment, the fix selections, the fix rounds, and links to the commits that landed them. `scripts/review_record.py validate` is the authority; this page explains the rules.
 
 ## Where records live
 

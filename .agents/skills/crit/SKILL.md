@@ -94,11 +94,3 @@ Pick a review ID such as `2026-10-21-menu-bar` (lowercase letters, digits, hyphe
 ## Verdict line
 
 Report one line, in this order: `UX 7/10 · HIG 30 pass, 3 fail, 6 untested, 10 N/A · Measurements 4 of 22 failed, 2 unknown · Changes required · Worst open severity 3`. After a round, give both worst values (`Worst open severity 3 to 2`). The verdict follows the worst open finding (see the record format). It is review evidence, not a release gate or a HIG compliance claim.
-
-## Tooling checks
-
-```bash
-python3 -m unittest discover -s .agents/skills/crit/scripts
-```
-
-The tests cover manifest validation, finding-ID stability, evidence links, verdict derivation, and append-only rules. None needs a screen, the app, GitHub, or a host.

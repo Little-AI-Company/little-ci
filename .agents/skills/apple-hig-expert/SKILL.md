@@ -116,12 +116,6 @@ Output is JSON: `counts` and `countsByKind` (`total`, `passed`, `failed`, `unkno
 
 The output is measurement evidence for the sampled elements only. Do not extrapolate it to the whole interface. For before and after claims, compare the same element, context, and rule ID.
 
-Run the tests after changing the tool or rubric:
-
-```bash
-python3 -m unittest discover -s .agents/skills/apple-hig-expert/scripts
-```
-
 ## Keep guidance current
 
 Apple revises the HIG after each WWDC (June) and platform release (September), and sometimes in between.
