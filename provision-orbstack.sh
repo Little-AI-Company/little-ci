@@ -189,7 +189,6 @@ main() {
   orbctl run -m "$ORB_MACHINE" -u root bash -s <<'EOF'
 set -euo pipefail
 apt_sources_dir="${LITTLE_CI_APT_SOURCES_DIR:-/etc/apt/sources.list.d}"
-apt_sources_list="${LITTLE_CI_APT_SOURCES_LIST:-/etc/apt/sources.list}"
 ubuntu_sources="$apt_sources_dir/ubuntu.sources"
 
 # Print "changed" or "unchanged"; with a second path, write the updated file
@@ -340,9 +339,6 @@ trap - EXIT
   echo "ERROR: universe is still missing from $ubuntu_sources" >&2
   exit 1
 }
-
-# An existing deb822 file may contain no active Ubuntu binary archive.
-# Preserve the classic list, which may still be the machine's only source.
 EOF
 
   echo "== installing base packages and Docker =="
