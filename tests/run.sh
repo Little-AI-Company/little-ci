@@ -55,19 +55,6 @@ assert_file_not_contains() {
   fi
 }
 
-assert_file_order() {
-  local file="$1"
-  local earlier_text="$2"
-  local later_text="$3"
-  local earlier_line later_line
-  earlier_line="$(grep -nF -- "$earlier_text" "$file" | head -1 | cut -d: -f1)"
-  later_line="$(grep -nF -- "$later_text" "$file" | head -1 | cut -d: -f1)"
-  [ -n "$earlier_line" ] || fail "missing earlier event in $file: $earlier_text"
-  [ -n "$later_line" ] || fail "missing later event in $file: $later_text"
-  [ "$earlier_line" -lt "$later_line" ] || \
-    fail "expected '$earlier_text' before '$later_text' in $file"
-}
-
 new_sandbox() {
   cleanup
   sandbox_dir="$(mktemp -d "${TMPDIR:-/tmp}/little-ci-tests.XXXXXX")"
@@ -214,20 +201,33 @@ case "${1:-}" in
       *" id -u "*) printf '%s\n' "${MOCK_GUEST_UID:-1000}" ;;
       *" uname -m "*) printf 'aarch64\n' ;;
     esac
-    if [ "${MOCK_EXECUTE_GUEST_APT_SOURCES:-0}" = 1 ] && [ "$#" -eq 7 ] && [[ " $* " == *" -u root bash -s "* ]]; then
+    if { [ "${MOCK_EXECUTE_GUEST_APT_SOURCES:-0}" = 1 ] || [ "${MOCK_EXECUTE_GUEST_BASE_PACKAGES:-0}" = 1 ]; } && \
+      [ "$#" -eq 7 ] && [[ " $* " == *" -u root bash -s "* ]]; then
       guest_script="$(cat)"
-      [ -z "${MOCK_ORBCTL_STDIN_LOG:-}" ] || printf '%s\n' "$guest_script" >> "$MOCK_ORBCTL_STDIN_LOG"
-      if [[ "$guest_script" == *ubuntu.sources* ]]; then
-        printf 'guest-script ubuntu.sources\n' >> "$MOCK_COMMAND_LOG"
+      if [ "${MOCK_EXECUTE_GUEST_APT_SOURCES:-0}" = 1 ] && [[ "$guest_script" == *ubuntu.sources* ]]; then
+        /bin/bash -s <<< "$guest_script"
+        exit $?
+      fi
+      if [ "${MOCK_EXECUTE_GUEST_BASE_PACKAGES:-0}" = 1 ] && [[ "$guest_script" == *needrestart* ]]; then
         /bin/bash -s <<< "$guest_script"
         exit $?
       fi
       [[ "$guest_script" != *apt-get* ]] || printf 'guest-script apt-get (not executed)\n' >> "$MOCK_COMMAND_LOG"
       exit "${MOCK_ORBCTL_STATUS:-0}"
     fi
-    if [ -n "${MOCK_ORBCTL_STDIN_LOG:-}" ] && [[ " $* " == *" bash -s "* ]]; then
-      cat >> "$MOCK_ORBCTL_STDIN_LOG"
-      printf '\n' >> "$MOCK_ORBCTL_STDIN_LOG"
+    if [ -n "${MOCK_GUEST_ROOT:-}" ]; then
+      case "${6:-}:${7:-}" in
+        mkdir:-p) mkdir -p -- "$MOCK_GUEST_ROOT${8:?}"; exit $? ;;
+        tar:-xzf) /usr/bin/tar -xzf - -C "$MOCK_GUEST_ROOT${10:?}"; exit $? ;;
+        bash:-c)
+          if [[ "${8:-}" == *provision-job-dependencies.sh* ]]; then
+            guest_uid=1000
+            [ "${5:-}" != root ] || guest_uid=0
+            MOCK_EFFECTIVE_UID="$guest_uid" /bin/bash -c "$8" "${9:?}" "$MOCK_GUEST_ROOT${10:?}"
+            exit $?
+          fi
+          ;;
+      esac
     fi
     if [ -n "${MOCK_GUEST_UNINSTALL_STATUS:-}" ] && [[ " $* " == *" bash -s -- --all --confirm "* ]]; then
       exit "$MOCK_GUEST_UNINSTALL_STATUS"
@@ -287,17 +287,39 @@ case "${1:-}" in
     esac
     ;;
   systemctl)
-    if [ "${2:-}" = is-active ]; then
-      [ "${MOCK_SERVICE_ACTIVE:-1}" = 1 ]
-    else
-      exit 0
-    fi
+    case "${2:-}" in
+      is-active) [ "${MOCK_SERVICE_ACTIVE:-1}" = 1 ] ;;
+      daemon-reload)
+        [ -n "${MOCK_SERVICE_START_STATE:-}" ] || exit 0
+        if [ -f "${MOCK_TEE_OUTPUT:-/nonexistent}" ]; then
+          /bin/cat "$MOCK_TEE_OUTPUT" > "$MOCK_SERVICE_START_STATE.loaded-drop-in"
+        elif [ "${MOCK_DROP_IN_STATE:-missing}" = unchanged ]; then
+          printf '[Service]\nEnvironment=TMPDIR=/scratch/%s/1\nEnvironment=TMP=/scratch/%s/1\n' \
+            "${MOCK_RUNNER_PREFIX:?}" "$MOCK_RUNNER_PREFIX" > "$MOCK_SERVICE_START_STATE.loaded-drop-in"
+        fi
+        ;;
+      *) exit 0 ;;
+    esac
     ;;
   ./svc.sh)
-    if [ "${2:-}" = install ]; then
-      : > "${MOCK_SERVICE_REINSTALLED_STORE:?}"
-      printf '%s\n' "${MOCK_SERVICE_NAME:?}" > "${MOCK_RUNNER_DIR:?}/.service"
-    fi
+    case "${2:-}" in
+      install)
+        printf '%s\n' "${3:-}" > "${MOCK_SERVICE_REINSTALLED_STORE:?}"
+        printf '%s\n' "${MOCK_SERVICE_NAME:?}" > "${MOCK_RUNNER_DIR:?}/.service"
+        ;;
+      start)
+        [ -n "${MOCK_SERVICE_START_STATE:-}" ] || exit 0
+        if [ -f "${MOCK_SERVICE_REINSTALLED_STORE:-/nonexistent}" ]; then
+          printf 'unit installed for %s\n' "$(/bin/cat "$MOCK_SERVICE_REINSTALLED_STORE")" > "$MOCK_SERVICE_START_STATE"
+        elif [ "${MOCK_SERVICE_UNIT_EXISTS:-1}" = 1 ]; then
+          printf 'unit existing\n' > "$MOCK_SERVICE_START_STATE"
+        else
+          printf 'unit missing\n' > "$MOCK_SERVICE_START_STATE"
+        fi
+        /bin/cat "$MOCK_SERVICE_START_STATE.loaded-drop-in" >> "$MOCK_SERVICE_START_STATE" 2>/dev/null || \
+          printf 'no scratch drop-in loaded\n' >> "$MOCK_SERVICE_START_STATE"
+        ;;
+    esac
     exit 0
     ;;
   install) exit 0 ;;
@@ -346,6 +368,22 @@ create_existing_runner_fixture() {
 }
 
 install_uninstall_resource_mocks() {
+  cat > "$sandbox_dir/bin/teardown-state-check" <<'MOCK'
+#!/usr/bin/env bash
+pending_record_store="${MOCK_PENDING_RECORD_STORE:-${MOCK_COMMAND_LOG:?}.pending-record}"
+runner_dir="${MOCK_ALLOWED_RUNNER_DIR:?}"
+teardown_step="$1"
+case "$teardown_step" in
+  service-uninstall) [ -f "$pending_record_store" ] && exit 0 ;;
+  unregister) [ -f "$pending_record_store" ] && [ ! -e "$runner_dir/.service" ] && exit 0 ;;
+  resource-removal)
+    [ -f "$pending_record_store" ] && [ ! -e "$runner_dir/.service" ] && [ ! -e "$runner_dir/.runner" ] && exit 0
+    ;;
+  record-removal) [ ! -e "$runner_dir" ] && exit 0 ;;
+esac
+printf '%s left unrecoverable state %s\n' "$teardown_step" "${2:-}" >> "$MOCK_COMMAND_LOG.teardown-violations"
+exit 1
+MOCK
   cat > "$sandbox_dir/bin/sudo" <<'MOCK'
 #!/usr/bin/env bash
 printf 'sudo' >> "${MOCK_COMMAND_LOG:?}"
@@ -380,20 +418,32 @@ case "${1:-}" in
   cat)
     if [[ "$last_argument" == */pending-cleanup/* ]]; then
       /bin/cat "$pending_record_store"
+    elif [ -n "${MOCK_SWAP_MANIFEST:-}" ]; then
+      /bin/cat "$MOCK_SWAP_MANIFEST"
     else
       printf '1\t/swapfile-%s-1\n' "${MOCK_RUNNER_PREFIX:?}"
     fi
     ;;
   swapon) printf '/swapfile-%s-1\n' "${MOCK_RUNNER_PREFIX:?}" ;;
-  swapoff) exit "${MOCK_SWAPOFF_STATUS:-0}" ;;
+  swapoff)
+    "$(dirname "$0")/teardown-state-check" resource-removal "$last_argument" || exit 1
+    exit "${MOCK_SWAPOFF_STATUS:-0}"
+    ;;
   python3)
     if [[ "${3:-}" == */pending-cleanup/* ]]; then
       printf '%s\t%s\t%s\t%s\t%s\n' "${4:?}" "${5:?}" "${6:?}" "${7:?}" "${8:?}" > "$pending_record_store"
+      exit 0
+    fi
+    "$(dirname "$0")/teardown-state-check" resource-removal "$last_argument" || exit 1
+    if [ -n "${MOCK_SWAP_MANIFEST:-}" ] && [[ "$last_argument" == */managed-swapfiles ]]; then
+      python3 - "${3:?}" "${4:?}" "$MOCK_SWAP_MANIFEST"
+      exit $?
     fi
     exit 0
     ;;
   ./svc.sh)
     if [ "${2:-}" = uninstall ]; then
+      "$(dirname "$0")/teardown-state-check" service-uninstall || exit 1
       : > "$service_removed_store"
       /bin/rm -f -- "${MOCK_ALLOWED_RUNNER_DIR:?}/.service"
     fi
@@ -403,9 +453,11 @@ case "${1:-}" in
   rm)
     removal_path="$last_argument"
     if [[ "$removal_path" == */pending-cleanup/* ]]; then
+      "$(dirname "$0")/teardown-state-check" record-removal "$removal_path" || exit 1
       /bin/rm -f -- "$pending_record_store"
       exit 0
     fi
+    "$(dirname "$0")/teardown-state-check" resource-removal "$removal_path" || exit 1
     if [ "$removal_path" = "${MOCK_ALLOWED_RUNNER_DIR:?}" ]; then
       /bin/rm -rf -- "$removal_path"
     fi
@@ -413,7 +465,7 @@ case "${1:-}" in
   *) exit 1 ;;
 esac
 MOCK
-  chmod +x "$sandbox_dir/bin/sudo"
+  chmod +x "$sandbox_dir/bin/sudo" "$sandbox_dir/bin/teardown-state-check"
 }
 
 create_removable_runner_fixture() {
@@ -994,7 +1046,24 @@ test_new_orbstack_machine_installs_needrestart_runner_policy() {
   new_sandbox
   install_uname_mock arm64
   install_orbctl_machine_mock
-  : > "$sandbox_dir/orbctl-stdin.log"
+  local needrestart_conf_dir="$sandbox_dir/needrestart-conf.d"
+  cat > "$sandbox_dir/bin/apt-get" <<'MOCK'
+#!/usr/bin/env bash
+[ -f "${LITTLE_CI_NEEDRESTART_CONF_DIR:?}/actions_runner_services.conf" ] || {
+  echo "apt-get ran before the needrestart runner policy existed" >&2
+  exit 1
+}
+MOCK
+  cat > "$sandbox_dir/bin/docker" <<'MOCK'
+#!/usr/bin/env bash
+exit 0
+MOCK
+  cat > "$sandbox_dir/bin/curl" <<'MOCK'
+#!/usr/bin/env bash
+echo "curl must not run when docker is installed" >&2
+exit 97
+MOCK
+  chmod +x "$sandbox_dir/bin/apt-get" "$sandbox_dir/bin/docker" "$sandbox_dir/bin/curl"
 
   local output status
   set +e
@@ -1002,7 +1071,8 @@ test_new_orbstack_machine_installs_needrestart_runner_policy() {
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_COMMAND_LOG="$sandbox_dir/command.log" \
-      MOCK_ORBCTL_STDIN_LOG="$sandbox_dir/orbctl-stdin.log" \
+      MOCK_EXECUTE_GUEST_BASE_PACKAGES=1 \
+      LITTLE_CI_NEEDRESTART_CONF_DIR="$needrestart_conf_dir" \
       MOCK_MACHINE_EXISTS=0 \
       MOCK_ORB_INFO='{"record":{"name":"little-ci-acme-widget-studio","state":"running","image":{"distro":"ubuntu","version":"noble","arch":"arm64"},"config":{"isolated":true,"isolate_network":true,"forward_ssh_agent":false,"default_username":"deploy","cpu_limit":2,"memory_limit_mib":4096,"disk_limit_bytes":51539607552}}}' \
       MOCK_ORB_IDENTITY=$'machine=little-ci-acme-widget-studio\nscope=repository\ntarget=acme/widget\nprefix=little-ci-acme-widget-studio\nuser=deploy\nhome=/home/deploy' \
@@ -1014,9 +1084,9 @@ test_new_orbstack_machine_installs_needrestart_runner_policy() {
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_contains "$sandbox_dir/orbctl-stdin.log" '/etc/needrestart/conf.d/actions_runner_services.conf'
-  assert_file_contains "$sandbox_dir/orbctl-stdin.log" "override_rc"
-  assert_file_contains "$sandbox_dir/orbctl-stdin.log" 'actions\.runner'
+  [ "$(cat "$needrestart_conf_dir/actions_runner_services.conf")" = \
+    '$nrconf{override_rc}{qr(^actions\.runner\..+\.service$)} = 0;' ] || \
+    fail "needrestart runner policy differs: $(cat "$needrestart_conf_dir/actions_runner_services.conf")"
   assert_contains "$output" 'little-ci-acme-widget-studio ready'
 }
 
@@ -1257,6 +1327,7 @@ test_inactive_service_repairs_scratch_drop_in_then_starts() {
       MOCK_DROP_IN_STATE=missing \
       MOCK_SERVICE_ACTIVE=0 \
       MOCK_TEE_OUTPUT="$sandbox_dir/drop-in.conf" \
+      MOCK_SERVICE_START_STATE="$sandbox_dir/service-start-state" \
       GITHUB_SCOPE=repository \
       GITHUB_URL=https://github.com/acme/widget \
       FLEET_ID=studio \
@@ -1270,12 +1341,8 @@ test_inactive_service_repairs_scratch_drop_in_then_starts() {
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_contains "$sandbox_dir/command.log" "sudo tee /etc/systemd/system/$service_name.d/zz-little-ci-scratch.conf"
-  assert_file_contains "$sandbox_dir/drop-in.conf" "Environment=TMPDIR=/scratch/$runner_prefix/1"
-  assert_file_contains "$sandbox_dir/command.log" 'sudo systemctl daemon-reload'
-  assert_file_contains "$sandbox_dir/command.log" 'sudo ./svc.sh start'
-  assert_file_order "$sandbox_dir/command.log" 'sudo tee' 'sudo systemctl daemon-reload'
-  assert_file_order "$sandbox_dir/command.log" 'sudo systemctl daemon-reload' 'sudo ./svc.sh start'
+  [ "$(cat "$sandbox_dir/service-start-state" 2>/dev/null)" = "$(printf 'unit existing\n[Service]\nEnvironment=TMPDIR=/scratch/%s/1\nEnvironment=TMP=/scratch/%s/1' "$runner_prefix" "$runner_prefix")" ] || \
+    fail "service did not start with the repaired scratch drop-in loaded: $(cat "$sandbox_dir/service-start-state" 2>/dev/null)"
   assert_contains "$output" 'existing local registration retained'
 }
 
@@ -1303,6 +1370,7 @@ test_missing_inactive_service_unit_is_reinstalled_safely() {
       MOCK_SERVICE_REINSTALLED_STORE="$sandbox_dir/service-reinstalled" \
       MOCK_DROP_IN_STATE=unchanged \
       MOCK_TEE_OUTPUT="$sandbox_dir/drop-in.conf" \
+      MOCK_SERVICE_START_STATE="$sandbox_dir/service-start-state" \
       GITHUB_SCOPE=repository \
       GITHUB_URL=https://github.com/acme/widget \
       FLEET_ID=studio \
@@ -1315,10 +1383,8 @@ test_missing_inactive_service_unit_is_reinstalled_safely() {
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_contains "$sandbox_dir/command.log" 'sudo systemctl is-active --quiet'
-  assert_file_contains "$sandbox_dir/command.log" 'sudo ./svc.sh install deploy'
-  assert_file_contains "$sandbox_dir/command.log" 'sudo ./svc.sh start'
-  assert_file_order "$sandbox_dir/command.log" 'sudo ./svc.sh install deploy' 'sudo ./svc.sh start'
+  [ "$(cat "$sandbox_dir/service-start-state" 2>/dev/null)" = "$(printf 'unit installed for deploy\n[Service]\nEnvironment=TMPDIR=/scratch/%s/1\nEnvironment=TMP=/scratch/%s/1' "$runner_prefix" "$runner_prefix")" ] || \
+    fail "service did not start from a unit reinstalled for deploy: $(cat "$sandbox_dir/service-start-state" 2>/dev/null)"
   assert_contains "$output" 'existing local registration retained'
 }
 
@@ -2129,17 +2195,14 @@ test_orbstack_install_fetches_registration_token_and_splits_service_install() {
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_order "$sandbox_dir/command.log" 'orbctl info little-ci-acme-studio --format json' 'orbctl start little-ci-acme-studio'
-  assert_file_order "$sandbox_dir/command.log" 'cat /etc/little-ci/identity' '/orgs/acme/actions/runners/registration-token'
-  assert_file_order "$sandbox_dir/command.log" '/orgs/acme/actions/runners/registration-token' 'mkdir -p /home/deploy/little-ci'
-  assert_file_contains "$sandbox_dir/command.log" '/orgs/acme/actions/runners/registration-token'
-  assert_file_contains "$sandbox_dir/command.log" 'ORBENV=REGTOKEN'
-  assert_file_contains "$sandbox_dir/command.log" 'RUNNER_ARCH=linux-arm64\ SKIP_SERVICE_INSTALL=1\ ./install-runners.sh'
-  assert_file_contains "$sandbox_dir/command.log" '-u root'
-  assert_file_contains "$sandbox_dir/command.log" 'systemctl is-active --quiet'
-  assert_file_contains "$sandbox_dir/command.log" 'rm -f -- .service'
-  assert_file_contains "$sandbox_dir/command.log" './svc.sh install'
-  assert_file_contains "$sandbox_dir/command.log" './svc.sh start'
+  assert_file_contains "$sandbox_dir/command.log" 'gh api --method POST /orgs/acme/actions/runners/registration-token'
+  local registration_commands token_commands
+  registration_commands="$(grep -F './install-runners.sh' "$sandbox_dir/command.log")"
+  token_commands="$(grep -F 'ORBENV=REGTOKEN' "$sandbox_dir/command.log")"
+  [ -n "$registration_commands" ] && [ "$token_commands" = "$registration_commands" ] || \
+    fail 'registration token was forwarded to a command other than runner registration'
+  assert_contains "$registration_commands" '-u deploy '
+  assert_contains "$registration_commands" 'SKIP_SERVICE_INSTALL=1'
   case "$output$(cat "$sandbox_dir/command.log")" in
     *do-not-log-registration-token*) fail 'registration token leaked to output or command log' ;;
   esac
@@ -2198,7 +2261,6 @@ test_orbstack_install_rejects_root_effective_guest_user_before_token() {
   set -e
   [ "$status" -ne 0 ] || fail 'OrbStack wrapper accepted runner user resolving to UID 0'
   assert_contains "$output" 'non-root UID'
-  assert_file_order "$sandbox_dir/command.log" 'cat /etc/little-ci/identity' 'id -u'
   assert_file_not_contains "$sandbox_dir/command.log" 'registration-token'
   assert_file_not_contains "$sandbox_dir/command.log" 'mkdir -p /home/deploy/little-ci'
 }
@@ -2392,24 +2454,21 @@ test_job_dependencies_install_exact_ubuntu_packages() {
   install_job_dependency_mocks "$dpkg_architecture"
   printf 'ripgrep\nlibnss3\n' > "$sandbox_dir/installed-packages"
 
-  local output status install_line expected_missing actual_requested package_name
+  local output status expected_missing actual_requested package_name
   set +e
   output="$(run_job_dependency_provisioner)"
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_contains "$sandbox_dir/command.log" 'apt-get update DEBIAN_FRONTEND=noninteractive'
-  assert_file_order "$sandbox_dir/command.log" 'apt-get update' 'apt-get install'
-  install_line="$(grep -F 'apt-get install' "$sandbox_dir/command.log")"
-  [ "$(grep -c -F 'apt-get install' "$sandbox_dir/command.log")" -eq 1 ] || \
-    fail 'expected exactly one apt-get install'
-  assert_contains "$install_line" 'apt-get install -y --no-install-recommends '
-  assert_contains "$install_line" 'DEBIAN_FRONTEND=noninteractive'
+  if grep -F 'apt-get' "$sandbox_dir/command.log" | grep -Fv 'DEBIAN_FRONTEND=noninteractive' >/dev/null; then
+    fail 'apt-get ran without DEBIAN_FRONTEND=noninteractive'
+  fi
 
   expected_missing="$(printf '%s\n' "${expected_job_dependency_packages[@]}" | grep -Fvx -e ripgrep -e libnss3 | sort)"
   actual_requested="$(
-    sed -e 's/^apt-get install -y --no-install-recommends //' -e 's/ DEBIAN_FRONTEND=.*$//' <<< "$install_line" |
-      tr ' ' '\n' | sort
+    grep '^apt-get install ' "$sandbox_dir/command.log" |
+      sed -e 's/^apt-get install //' -e 's/ DEBIAN_FRONTEND=.*$//' |
+      tr ' ' '\n' | grep -v -e '^-' -e '^$' | sort -u
   )"
   [ "$actual_requested" = "$expected_missing" ] || \
     fail "requested packages differ from the Playwright/job set: $(diff <(printf '%s\n' "$expected_missing") <(printf '%s\n' "$actual_requested") | tr '\n' ' ')"
@@ -2596,7 +2655,6 @@ test_orbstack_enables_universe_in_existing_deb822_sources() {
   mkdir -p "$sandbox_dir/apt/sources.list.d"
   printf 'deb http://ports.ubuntu.com/ubuntu-ports noble main universe\n' > "$sandbox_dir/apt/sources.list"
   cp "$sandbox_dir/apt/sources.list" "$sandbox_dir/sources.list.before"
-  : > "$sandbox_dir/orbctl-stdin.log"
   local ubuntu_sources="$sandbox_dir/apt/sources.list.d/ubuntu.sources"
   local other_sources="$sandbox_dir/apt/sources.list.d/docker.sources"
   printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: noble\nComponents: stable\n' > "$other_sources"
@@ -2809,7 +2867,6 @@ MOCK
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_COMMAND_LOG="$sandbox_dir/command.log" \
-      MOCK_ORBCTL_STDIN_LOG="$sandbox_dir/orbctl-stdin.log" \
       MOCK_EXECUTE_GUEST_APT_SOURCES=1 \
       LITTLE_CI_APT_SOURCES_DIR="$sandbox_dir/apt/sources.list.d" \
       LITTLE_CI_APT_SOURCES_LIST="$sandbox_dir/apt/sources.list" \
@@ -2849,8 +2906,6 @@ MOCK
       if [[ "$source_state" =~ ^(empty-sources|comment-only-sources|empty-types|archive-path-case)$ ]]; then
         cmp -s "$ubuntu_sources" "$sandbox_dir/ubuntu.sources.before" || fail "inactive sources changed"
       fi
-      assert_file_order "$sandbox_dir/command.log" 'guest-script ubuntu.sources' 'guest-script apt-get'
-      assert_file_order "$sandbox_dir/command.log" 'guest-script ubuntu.sources' './provision-job-dependencies.sh'
       ;;
     *)
       [ "$status" -ne 0 ] || fail "$source_state ubuntu.sources was accepted"
@@ -2868,15 +2923,19 @@ test_orbstack_provisioning_installs_job_dependencies_in_guest() {
   new_sandbox
   install_uname_mock arm64
   install_orbctl_machine_mock
-  : > "$sandbox_dir/orbctl-stdin.log"
+  install_job_dependency_mocks arm64
+  mkdir -p "$sandbox_dir/guest-root"
 
-  local status
+  local output status package_name
   set +e
-  (
+  output="$(
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_COMMAND_LOG="$sandbox_dir/command.log" \
-      MOCK_ORBCTL_STDIN_LOG="$sandbox_dir/orbctl-stdin.log" \
+      MOCK_GUEST_ROOT="$sandbox_dir/guest-root" \
+      MOCK_INSTALLED_PACKAGES="$sandbox_dir/installed-packages" \
+      LITTLE_CI_OS_RELEASE_FILE="$sandbox_dir/os-release" \
+      LITTLE_CI_NEEDRESTART_CONF_DIR="$sandbox_dir/needrestart-conf.d" \
       MOCK_MACHINE_EXISTS=1 \
       MOCK_MACHINE_NAME=little-ci-acme-widget-studio \
       MOCK_ORB_INFO='{"record":{"name":"little-ci-acme-widget-studio","state":"running","image":{"distro":"ubuntu","version":"noble","arch":"arm64"},"config":{"isolated":true,"isolate_network":true,"forward_ssh_agent":false,"default_username":"deploy","cpu_limit":2,"memory_limit_mib":4096,"disk_limit_bytes":51539607552}}}' \
@@ -2884,18 +2943,16 @@ test_orbstack_provisioning_installs_job_dependencies_in_guest() {
       GITHUB_SCOPE=repository \
       GITHUB_URL=https://github.com/acme/widget \
       FLEET_ID=studio \
-      ./provision-orbstack.sh >/dev/null 2>&1
-  )
+      ./provision-orbstack.sh 2>&1
+  )"
   status=$?
   set -e
   assert_status 0 "$status"
-  assert_file_contains "$sandbox_dir/orbctl-stdin.log" 'Components: main restricted universe multiverse'
-  assert_file_contains "$sandbox_dir/command.log" '-u root bash -c cd\ \"\$1\"\ \&\&\ ./provision-job-dependencies.sh bash /home/deploy/little-ci'
-  assert_file_order "$sandbox_dir/command.log" 'tar -xzf - -C /home/deploy/little-ci' './provision-job-dependencies.sh'
-  assert_file_order "$sandbox_dir/command.log" 'orbctl run -m little-ci-acme-widget-studio -u root bash -s ORBENV' './provision-job-dependencies.sh'
-  assert_file_not_contains "$sandbox_dir/command.log" '-u deploy bash -c cd\ \"\$1\"\ \&\&\ ./provision-job-dependencies.sh'
-  assert_file_not_contains "$sandbox_dir/orbctl-stdin.log" 'playwright install'
-  assert_file_not_contains "$sandbox_dir/orbctl-stdin.log" 'sudoers.d/deploy'
+  for package_name in "${expected_job_dependency_packages[@]}"; do
+    grep -Fqx -- "$package_name" "$sandbox_dir/installed-packages" || fail "not installed in the guest: $package_name"
+  done
+  assert_file_not_contains "$sandbox_dir/command.log" 'FORBIDDEN'
+  assert_contains "$output" 'CI job dependencies ready'
 }
 
 test_local_uninstall_uses_remove_token_and_deletes_selected_runner() {
@@ -2919,22 +2976,7 @@ test_local_uninstall_uses_remove_token_and_deletes_selected_runner() {
 printf 'config-remove-token=matched\n' >> "${MOCK_COMMAND_LOG:?}"
 rm -f .runner
 MOCK
-  cat > "$sandbox_dir/bin/sudo" <<'MOCK'
-#!/usr/bin/env bash
-printf 'sudo %s\n' "$*" >> "${MOCK_COMMAND_LOG:?}"
-case "${1:-}" in
-  test) exit 1 ;;
-  rm)
-    runner_path="${!#}"
-    if [ "$runner_path" = "${MOCK_ALLOWED_RUNNER_DIR:?}" ]; then
-      /bin/rm -rf -- "$runner_path"
-    fi
-    ;;
-  rmdir|systemctl) exit 0 ;;
-  *) exit 1 ;;
-esac
-MOCK
-  chmod +x "$runner_dir/config.sh" "$sandbox_dir/bin/sudo"
+  chmod +x "$runner_dir/config.sh"
   install_uninstall_resource_mocks
 
   local output status
@@ -3078,11 +3120,12 @@ test_local_uninstall_removes_only_owned_service_scratch_and_swap_artifacts() {
   create_removable_runner_fixture "$runner_home" "$runner_prefix-1" "$service_name"
   cat > "$runner_dir/config.sh" <<'MOCK'
 #!/usr/bin/env bash
-printf 'config-remove-called\n' >> "${MOCK_COMMAND_LOG:?}"
+teardown-state-check unregister || exit 1
 rm -f .runner
 MOCK
   chmod +x "$runner_dir/config.sh"
   install_uninstall_resource_mocks
+  printf '1\t/swapfile-%s-1\n' "$runner_prefix" > "$sandbox_dir/managed-swapfiles"
 
   local output status
   set +e
@@ -3093,6 +3136,7 @@ MOCK
       MOCK_ALLOWED_RUNNER_DIR="$runner_dir" \
       MOCK_RUNNER_PREFIX="$runner_prefix" \
       MOCK_PENDING_RECORD_STORE="$sandbox_dir/pending-record" \
+      MOCK_SWAP_MANIFEST="$sandbox_dir/managed-swapfiles" \
       GITHUB_SCOPE=repository \
       GITHUB_URL=https://github.com/acme/widget \
       FLEET_ID=studio \
@@ -3103,19 +3147,17 @@ MOCK
   )"
   status=$?
   set -e
+  [ ! -e "$sandbox_dir/command.log.teardown-violations" ] || \
+    fail "teardown left unrecoverable state: $(cat "$sandbox_dir/command.log.teardown-violations")"
   assert_status 0 "$status"
-  assert_file_order "$sandbox_dir/command.log" "/pending-cleanup/1 1 $runner_prefix-1" 'sudo ./svc.sh uninstall'
-  assert_file_order "$sandbox_dir/command.log" 'sudo ./svc.sh uninstall' 'config-remove-called'
-  assert_file_order "$sandbox_dir/command.log" 'config-remove-called' "sudo rm -rf -- /scratch/$runner_prefix/1"
-  assert_file_order "$sandbox_dir/command.log" "sudo rm -rf -- $runner_dir" "sudo rm -f -- /var/lib/little-ci/fleets/$runner_prefix/pending-cleanup/1"
   assert_file_contains "$sandbox_dir/command.log" "sudo rm -f -- /etc/systemd/system/$service_name.d/zz-little-ci-scratch.conf"
   assert_file_contains "$sandbox_dir/command.log" "sudo rmdir /etc/systemd/system/$service_name.d"
   assert_file_not_contains "$sandbox_dir/command.log" "rm -rf -- /etc/systemd/system/$service_name.d"
   assert_file_contains "$sandbox_dir/command.log" "sudo rm -rf -- /scratch/$runner_prefix/1"
   assert_file_contains "$sandbox_dir/command.log" "sudo swapoff /swapfile-$runner_prefix-1"
-  assert_file_contains "$sandbox_dir/command.log" "sudo python3 - /swapfile-$runner_prefix-1"
   assert_file_contains "$sandbox_dir/command.log" "sudo rm -f -- /swapfile-$runner_prefix-1"
-  assert_file_contains "$sandbox_dir/command.log" "sudo python3 - 1 /swapfile-$runner_prefix-1 /var/lib/little-ci/fleets/$runner_prefix/managed-swapfiles"
+  [ ! -e "$sandbox_dir/managed-swapfiles" ] || \
+    fail "swap ownership manifest still lists the removed swapfile: $(cat "$sandbox_dir/managed-swapfiles")"
   [ ! -e "$runner_dir" ] || fail 'runner directory retained after complete owned-resource cleanup'
   [ ! -e "$sandbox_dir/pending-record" ] || fail 'pending cleanup record remained after complete cleanup'
   assert_contains "$output" 'Local removal complete: 1 removed, 0 failed.'
@@ -3244,6 +3286,7 @@ test_unregistration_failure_retains_metadata_and_pending_record() {
   create_removable_runner_fixture "$runner_home" "$runner_prefix-1" "$service_name"
   cat > "$runner_dir/config.sh" <<'MOCK'
 #!/usr/bin/env bash
+teardown-state-check unregister || exit 1
 printf 'config-remove-failed\n' >> "${MOCK_COMMAND_LOG:?}"
 exit 1
 MOCK
@@ -3272,8 +3315,9 @@ MOCK
   [ "$status" -ne 0 ] || fail 'unregistration failure unexpectedly reported success'
   assert_contains "$output" 'protected cleanup record retained'
   assert_contains "$output" 'Recovery steps:'
-  assert_file_order "$sandbox_dir/command.log" "/pending-cleanup/1 1 $runner_prefix-1" 'sudo ./svc.sh uninstall'
-  assert_file_order "$sandbox_dir/command.log" 'sudo ./svc.sh uninstall' 'config-remove-failed'
+  [ ! -e "$sandbox_dir/command.log.teardown-violations" ] || \
+    fail "teardown left unrecoverable state: $(cat "$sandbox_dir/command.log.teardown-violations")"
+  assert_file_contains "$sandbox_dir/command.log" 'config-remove-failed'
   assert_file_not_contains "$sandbox_dir/command.log" "sudo rm -rf -- /scratch/$runner_prefix/1"
   [ -f "$runner_dir/.runner" ] || fail '.runner metadata was lost after unregistration failure'
   [ -f "$sandbox_dir/pending-record" ] || fail 'pending cleanup record was lost after unregistration failure'

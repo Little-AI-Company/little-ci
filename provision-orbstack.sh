@@ -311,8 +311,9 @@ EOF
   orbctl run -m "$ORB_MACHINE" -u root bash -s <<'EOF'
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-install -d -m 755 /etc/needrestart/conf.d
-cat > /etc/needrestart/conf.d/actions_runner_services.conf <<'NEEDRESTART'
+needrestart_conf_dir="${LITTLE_CI_NEEDRESTART_CONF_DIR:-/etc/needrestart/conf.d}"
+install -d -m 755 "$needrestart_conf_dir"
+cat > "$needrestart_conf_dir/actions_runner_services.conf" <<'NEEDRESTART'
 $nrconf{override_rc}{qr(^actions\.runner\..+\.service$)} = 0;
 NEEDRESTART
 apt-get update
