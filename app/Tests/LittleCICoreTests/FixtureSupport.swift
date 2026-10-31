@@ -66,6 +66,29 @@ struct ProbeFixture {
         envelope = try! JSONSerialization.jsonObject(with: Fixture.data("probes/\(name).json")) as! [String: Any]
     }
 
+    init(sections: [String: (exit: Int, text: String)]) {
+        envelope = ["probeVersion": ProbeScript.version,
+                    "sections": sections.mapValues { ["exit": $0.exit, "output": Data($0.text.utf8).base64EncodedString()] }]
+    }
+
+    static func linuxHost(_ hostname: String) -> ProbeFixture {
+        ProbeFixture(sections: ["identity": (0, "\(hostname)\n1000\n")])
+    }
+
+    static func absentOrbStackVM(_ machine: String) -> ProbeFixture {
+        ProbeFixture(sections: ["vm_info": (1, "[-32098] machine not found: '\(machine)'")])
+    }
+
+    static func orbStackVM(_ machine: String, runnerUser: String, identity: String) -> ProbeFixture {
+        let record = OrbStackVMFacts.Info.Record(
+            name: machine, state: "running", image: .init(distro: "ubuntu", version: "noble", arch: "arm64"),
+            config: .init(isolated: true, isolateNetwork: true, defaultUsername: runnerUser, forwardSSHAgent: false),
+            osRelease: .init(versionID: "24.04"))
+        let info = String(decoding: try! JSONEncoder().encode(OrbStackVMFacts.Info(record: record)), as: UTF8.self)
+        let guest = String(decoding: try! JSONSerialization.data(withJSONObject: linuxHost(machine).envelope), as: UTF8.self)
+        return ProbeFixture(sections: ["vm_info": (0, info), "vm_mounts": (0, ""), "vm_identity": (0, identity), "guest": (0, guest)])
+    }
+
     func section(_ name: String) -> String {
         let sections = envelope["sections"] as! [String: [String: Any]]
         return String(decoding: Data(base64Encoded: sections[name]!["output"] as! String)!, as: UTF8.self)

@@ -85,16 +85,19 @@ struct CodexReviewTests {
 
     @Test("A timed-out command that ignores SIGTERM is killed before the step reports")
     func timeoutKillsTheProcess() async throws {
-        let marker = FileManager.default.temporaryDirectory.appendingPathComponent("little-ci-timeout-\(UUID().uuidString)")
-        let script = "trap '' TERM; echo $$ > '\(marker.path)'; while :; do sleep 1; done"
-        let started = Date()
-        await #expect(throws: CommandError.self) {
-            try await ProcessCommandRunner().run(CommandInvocation("/bin/sh", ["-c", script]), standardInput: nil, timeout: .seconds(1))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("little-ci-timeout-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let pidFile = directory.appendingPathComponent("pid").path
+        let neverWritten = directory.appendingPathComponent("never-written").path
+        let script = "trap '' TERM; echo $$ > '\(pidFile)'; mkfifo '\(neverWritten)'; cat > /dev/null; read -r _ < '\(neverWritten)'"
+        let invocation = CommandInvocation("/bin/sh", ["-c", script])
+        let largerThanThePipeBuffer = Data(count: 1 << 20)
+        await #expect(throws: CommandError.timedOut(invocation.displayText)) {
+            try await ProcessCommandRunner().run(invocation, standardInput: largerThanThePipeBuffer, timeout: .zero)
         }
-        #expect(Date().timeIntervalSince(started) < 15)
-        let pid = try #require(Int32(String(contentsOf: marker, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
+        let pid = try #require(Int32(String(contentsOfFile: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
         #expect(kill(pid, 0) != 0, "the shell that ignored SIGTERM is gone")
-        try? FileManager.default.removeItem(at: marker)
     }
 
     @Test("Runs on the same branch name from different forks are not superseded")
@@ -150,7 +153,7 @@ struct CodexReviewTests {
         #expect(assessment.plans.filter { $0.subject == .host("vm") }.isEmpty)
     }
 
-    @Test("Lifecycle plans start by checking the checkout's config.env against the reviewed values", arguments: [
+    @Test("Every lifecycle plan stops before any script when the checkout's config.env differs from the reviewed values", arguments: [
         ("FLEET_ID=studio", true), ("FLEET_ID=laptop", false), ("FLEET_ID=studio\nRUNNER_USER=admin", false),
         ("FLEET_ID=studio\nRUNNER_GROUP=other-group", false),
     ])
@@ -169,14 +172,26 @@ struct CodexReviewTests {
                           fleetPrefix: prefix, littleCICheckout: checkout.path)), access: .local, runners: [])
         var inventory = Fixture.inventory
         inventory.hosts.append(vm)
-        let plans = PlanFactory.lifecyclePlans(vm, inventory: inventory)
-        #expect(plans.allSatisfy { $0.steps.first?.description.hasPrefix("Check that") == true })
-        guard case .localCommand(let check)? = plans.first?.steps.first?.action else {
-            Issue.record("the first step is not a local check")
-            return
+        let probe = ProbeFixture.orbStackVM(prefix, runnerUser: "deploy", identity: Self.identity)
+        let snapshot = Fixture.snapshot(online: [])
+        let observation = await HostProber(runner: RecordingRunner(probe: probe)).observe(vm, in: inventory, includePowerLog: false,
+                                                                                          previous: nil, now: Fixture.now)
+        let observations = FleetObservations(inventory: inventory, github: snapshot, hosts: ["vm": observation], lentHosts: ["m1"])
+        let plans = Assessor.assess(observations, now: Fixture.now).plans.filter { $0.subject == .host("vm") }
+        #expect(Set(plans.map(\.id)) == ["vm.up.vm", "vm.down.vm", "vm.delete.vm"])
+
+        for plan in plans {
+            let runner = RecordingRunner(probe: probe, executing: { $0.executable == "/bin/bash" ? $0 : nil })
+            let outcome = await PlanExecutor(github: FakeGitHub(snapshot), prober: HostProber(runner: runner), commandRunner: runner)
+                .execute(PlanReview(plan: plan, reviewedAt: Fixture.now), observations: observations, now: Fixture.now)
+            if matches {
+                #expect(outcome.succeeded, "\(plan.id): \(outcome.refusals) \(outcome.failedStep?.output ?? "")")
+                #expect(!runner.calls.isEmpty, "\(plan.id) ran its scripts")
+            } else {
+                #expect(outcome.failedStep != nil && outcome.completedSteps.isEmpty, "\(plan.id): \(outcome.refusals)")
+                #expect(runner.calls.isEmpty, "\(plan.id) ran a script after config.env did not match")
+            }
         }
-        let result = try await ProcessCommandRunner().run(check, standardInput: nil, timeout: .seconds(20))
-        #expect((result.exitCode == 0) == matches, "\(result.errorText)")
     }
 
     @Test("Retire is offered only for a runner whose .runner names this target and this runner")

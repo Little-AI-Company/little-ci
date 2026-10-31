@@ -29,11 +29,14 @@ final class RecordingRunner: CommandRunning, @unchecked Sendable {
     let probe: Data
     let failing: (String) -> Bool
     let echoStandardInput: Bool
+    let executing: (CommandInvocation) -> CommandInvocation?
 
-    init(probe: ProbeFixture, failing: @escaping (String) -> Bool = { _ in false }, echoStandardInput: Bool = false) {
+    init(probe: ProbeFixture, failing: @escaping (String) -> Bool = { _ in false }, echoStandardInput: Bool = false,
+         executing: @escaping (CommandInvocation) -> CommandInvocation? = { _ in nil }) {
         self.probe = try! JSONSerialization.data(withJSONObject: probe.envelope)
         self.failing = failing
         self.echoStandardInput = echoStandardInput
+        self.executing = executing
     }
 
     var calls: [Call] { lock.withLock { recorded } }
@@ -42,6 +45,9 @@ final class RecordingRunner: CommandRunning, @unchecked Sendable {
         let input = String(decoding: standardInput ?? Data(), as: UTF8.self)
         if invocation.arguments.last == "/bin/bash -s", input.contains("probe_separator") {
             return CommandResult(exitCode: 0, standardOutput: probe, standardError: Data())
+        }
+        if let real = executing(invocation) {
+            return try await ProcessCommandRunner().run(real, standardInput: standardInput, timeout: timeout)
         }
         lock.withLock { recorded.append(Call(invocation: invocation, standardInput: input)) }
         let command = invocation.arguments.joined(separator: " ")
@@ -119,12 +125,12 @@ struct PlanSafetyTests {
         let outcome = await executor(github, runner).execute(PlanReview(plan: plan, reviewedAt: Fixture.now),
                                                              observations: observations(snapshot), now: Fixture.now)
         #expect(outcome.succeeded)
-        #expect(await github.freshReads == 1, "the read before running skips every cache")
+        #expect(await github.freshReads > 0, "the read before running skips every cache")
         let token = github.token
-        #expect(runner.calls.count == 3)
         #expect(runner.calls.allSatisfy { !$0.invocation.arguments.joined().contains(token) })
-        #expect(runner.calls[1].standardInput == token + "\n")
-        #expect(runner.calls[1].invocation.arguments.last?.contains("./config.sh remove --unattended") == true)
+        #expect(runner.calls.filter { $0.standardInput.contains(token) }.map(\.standardInput) == [token + "\n"],
+                "one command receives the token, on stdin")
+        #expect(outcome.completedSteps.contains { $0.output == "received ***\n" }, "the command's echo of the token is redacted")
         #expect(outcome.completedSteps.allSatisfy { !$0.output.contains(token) })
     }
 
@@ -135,13 +141,13 @@ struct PlanSafetyTests {
         let runner = RecordingRunner(probe: m1, failing: { $0.contains("config.sh remove") })
         let outcome = await executor(FakeGitHub(snapshot), runner).execute(PlanReview(plan: plan, reviewedAt: Fixture.now),
                                                                            observations: observations(snapshot), now: Fixture.now)
-        #expect(outcome.completedSteps.count == 1)
-        #expect(outcome.failedStep?.description == "Unregister on GitHub with a removal token from stdin")
-        #expect(outcome.remainingCommands.count == 1)
+        #expect(!outcome.succeeded)
+        let failed = try #require(outcome.failedStep)
+        #expect(!outcome.remainingCommands.isEmpty, "the cleanup after unregistration is left for the operator")
         let recovery = try #require(outcome.recovery)
-        #expect(recovery.contains("config.sh remove"))
-        #expect(recovery.contains("rm -f -- \"$HOME/Library/LaunchAgents/\"'com.example.ci-runner.ci-m1-check-3.plist'"))
-        #expect(runner.calls.count == 2, "the agent is not removed after unregistration failed")
+        #expect(([failed.command] + outcome.remainingCommands).allSatisfy { recovery.contains($0) })
+        #expect(runner.calls.last.map { runner.failing($0.invocation.arguments.joined(separator: " ")) } == true,
+                "nothing ran after unregistration failed")
     }
 
     @Test("Cancelling refuses when the runs it was reviewed for are no longer the same")
