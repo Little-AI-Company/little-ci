@@ -57,6 +57,7 @@ initialize_guest_runtime_paths() {
     provision-postgres.sh
     lib/github-target.sh
     lib/orbstack-machine.sh
+    lib/swap-ownership.sh
   )
 
   if [ -e "$repo_dir/config.env" ] || [ -L "$repo_dir/config.env" ]; then
@@ -361,10 +362,6 @@ EOF
     'uname -a; nproc; free -h; docker --version; if sudo -n true 2>/dev/null; then echo "ERROR: runner still has passwordless sudo" >&2; exit 1; else echo sudo=disabled; fi'
   echo "Next: ./install-runners-orb.sh"
 }
-
-if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
-  return 0
-fi
 
 set -euo pipefail
 main "$@"

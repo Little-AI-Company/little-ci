@@ -1498,7 +1498,7 @@ MOCK
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_MANIFEST_STAT=0:0:600 \
-      bash -c '. ./provision-box.sh; swap_ownership_manifest="$1"; record_created_swapfile 1 /swapfile-little-ci-acme-widget-studio-1; record_created_swapfile 1 /swapfile-little-ci-acme-widget-studio-1' bash "$manifest_path"
+      bash -c '. ./lib/swap-ownership.sh; record_created_swapfile "$1" 1 /swapfile-little-ci-acme-widget-studio-1; record_created_swapfile "$1" 1 /swapfile-little-ci-acme-widget-studio-1' bash "$manifest_path"
   )
   status=$?
   set -e
@@ -1509,7 +1509,7 @@ MOCK
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_MANIFEST_STAT=0:0:600 \
-      bash -c '. ./provision-box.sh; swap_ownership_manifest="$1"; record_created_swapfile 1 /swapfile-little-ci-acme-widget-laptop-1' bash "$second_manifest_path"
+      bash -c '. ./lib/swap-ownership.sh; record_created_swapfile "$1" 1 /swapfile-little-ci-acme-widget-laptop-1' bash "$second_manifest_path"
   )
   [ "$(cat "$second_manifest_path")" = $'1\t/swapfile-little-ci-acme-widget-laptop-1' ] || fail 'second fleet swapfile record is not exact'
   [ "$(cut -f2 "$manifest_path")" != "$(cut -f2 "$second_manifest_path")" ] || fail 'two fleets mapped runner 1 to the same swapfile path'
@@ -1519,7 +1519,7 @@ MOCK
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" \
       MOCK_MANIFEST_STAT=501:20:644 \
-      bash -c '. ./provision-box.sh; swap_ownership_manifest="$1"; record_created_swapfile 3 /swapfile-little-ci-acme-widget-studio-3' bash "$manifest_path"
+      bash -c '. ./lib/swap-ownership.sh; record_created_swapfile "$1" 3 /swapfile-little-ci-acme-widget-studio-3' bash "$manifest_path"
   ) >/dev/null 2>&1
   status=$?
   set -e
@@ -1547,14 +1547,14 @@ MOCK
   (
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" MOCK_FSTAB="$sandbox_dir/fstab" \
-      bash -c '. ./provision-box.sh; fstab_has_exact_swap_entry /swapfile-little-ci-acme-widget-studio-1'
+      bash -c '. ./lib/swap-ownership.sh; fstab_has_exact_swap_entry /swapfile-little-ci-acme-widget-studio-1'
   )
   commented_status=$?
   printf '/swapfile-little-ci-acme-widget-studio-1 none swap sw 0 0\n' >> "$sandbox_dir/fstab"
   (
     cd "$sandbox_dir/repo" &&
       PATH="$sandbox_dir/bin:$PATH" MOCK_FSTAB="$sandbox_dir/fstab" \
-      bash -c '. ./provision-box.sh; fstab_has_exact_swap_entry /swapfile-little-ci-acme-widget-studio-1'
+      bash -c '. ./lib/swap-ownership.sh; fstab_has_exact_swap_entry /swapfile-little-ci-acme-widget-studio-1'
   )
   active_status=$?
   set -e
@@ -1568,10 +1568,9 @@ test_existing_unowned_fleet_swapfile_is_rejected() {
   set +e
   output="$(
     cd "$sandbox_dir/repo" && bash -c '
-      . ./provision-box.sh
-      swap_ownership_manifest="$1"
+      . ./lib/swap-ownership.sh
       SWAP_GB=10
-      validate_owned_swapfile 1 /swapfile-little-ci-acme-widget-studio-1
+      validate_owned_swapfile "$1" 1 /swapfile-little-ci-acme-widget-studio-1
     ' bash "$sandbox_dir/missing-managed-swapfiles" 2>&1
   )"
   status=$?
