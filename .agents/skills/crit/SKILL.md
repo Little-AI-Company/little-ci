@@ -83,7 +83,7 @@ Pick a review ID such as `2026-10-21-menu-bar` (lowercase letters, digits, hyphe
 
 7. **Record the round.** Append a round to the tracked record: code state, actors (provider, exact model, reasoning effort, client; `null` when unknown), the after captures, and one change per fix with status, test evidence, and before/after pairs. `verified` needs a pair and test evidence; `implemented` needs test or behavior evidence. Before replacing the saved file, copy it to `.crit/<review-id>/review.saved.json` and validate the new version with `--previous .crit/<review-id>/review.saved.json`. After the work is committed, append a `commitLinks` entry with the real SHAs; never edit the round. Keep implementation, verification, commits, and release as separate facts. Do not run another round only to raise a score.
 
-8. **Close the round.** When the tracked record holds the round and no selected fix is still open (no uncommitted change or open PR for it), delete the screenshots:
+8. **Close the round.** When the tracked record holds the round and no selected fix is still open (no uncommitted or unpushed change for it), delete the screenshots:
 
    ```bash
    find .crit/<review-id> -type f -name '*.png' -delete
