@@ -4,6 +4,11 @@
 
 # Little-CI
 
+> [!IMPORTANT]
+> Little-CI is archived as of November 1, 2026 and gets no more changes or
+> fixes. The code stays here, MIT licensed, for anyone who wants to read it or
+> fork it.
+
 [![MIT license](https://img.shields.io/github/license/Little-AI-Company/little-ci)](LICENSE)
 
 Your Mac can run your CI. Little-CI turns an Apple Silicon Mac into a small fleet
